@@ -10,7 +10,11 @@ async def stream_ollama_response(message: str) -> AsyncGenerator[str, None]:
         async with client.stream(
             "POST",
             "http://localhost:11434/api/generate",
-            json={"model": "llama3", "prompt": PROMPT_TEMPLATE + message},
+            json={
+                "model": "llama3",
+                "prompt": PROMPT_TEMPLATE + message,
+                "stream": True,
+            },
         ) as response:
             async for chunk in response.aiter_lines():
                 yield json.loads(chunk)
