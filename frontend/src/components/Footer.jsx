@@ -11,7 +11,7 @@ const Footer = ( {setRoute} ) => {
                     <span className="dock-label">Chat</span>
                 </button>
                 
-                <button onClick={() => setRoute("ws://localhost:8000/ws")}>
+                <button onClick={() => setRoute("ws://localhost:8000/ws/course")}>
                     <img src={Book} alt="Book" className="size-[2em]" />
                     <span className="dock-label">Course</span>
                 </button>
