@@ -1,50 +1,71 @@
-import { useState } from "react";
-import api from "../api"
-import { useNavigate } from "react-router-dom"
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
-import Username from "./input/username";
-import Password from "./input/password";
 import Plank from "./Plank";
-import NeutralButtonXL from "./Button";
+import Button from "./Button";
+import { useEffect, useRef, useState } from "react";
+import Cadre from "./Cadre";
+import Chat from "./Chat";
 
 function Form({route, method}) {
-    const [username, setUsername] = useState("")
-    const [password, setPassword] = useState("")
-    const [loading, setLoading] = useState(false)
-    const navigate = useNavigate()
+    const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const ws = useRef(null);
 
-    const name = method === "login" ? "Login" : "Register";
+    useEffect(() => {
+        // Remplacez l'URL par celle de votre backend WebSocket
+        ws.current = new WebSocket("ws://localhost:3001");
+        ws.current.onopen = () => {
+            console.log("WebSocket connecté");
+        };
+        ws.current.onmessage = (event) => {
+            setMessages(prev => [...prev, event.data]);
+        };
+        ws.current.onerror = (err) => {
+            alert("Erreur WebSocket : " + err.message);
+        };
+        ws.current.onclose = () => {
+            console.log("WebSocket déconnecté");
+        };
+        return () => {
+            ws.current && ws.current.close();
+        };
+    }, []);
 
-    const handleSubmit = async (e) => {
-        setLoading(true);
+    const handleSubmit = (e) => {
         e.preventDefault();
-        try {
-            const res = await api.post(route, { username, password })
-            if (method === "login") {
-                localStorage.setItem(ACCESS_TOKEN, res.data.access);
-                localStorage.setItem(REFRESH_TOKEN, res.data.refresh);
-                navigate("/")
-            } else {
-                navigate("/login")
-            }
-        } catch (error) {
-            alert(error)
-        } finally {
-            setLoading(false)
+        setLoading(true);
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(message);
+            setMessage("");
+        } else {
+            alert("WebSocket non connecté");
         }
+        setLoading(false);
     }
 
-    return <Plank componentChildren={
-        <form onSubmit={handleSubmit} className="form-container">
-            <h2 className="text-3xl font-bold text-neutral inner-text-shadow-lg font-sans">{name} :</h2>
+    return <div>
+            <Cadre size={"large"} componentChildren={
+                <Chat messages={messages}/>
+            }/>
+            <form onSubmit={handleSubmit} className="form-container">
+                <div className='mb-4'/>
+                <input
+                type="text"
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                placeholder="Votre message"
+                className="input"
+                disabled={loading}
+            />
             <div className='mb-4'/>
-            <Username onChange={setUsername}/>
+            <Button theme={"dark"} text="Envoyer" submit={handleSubmit}/>
             <div className='mb-4'/>
-            <Password onChange={setPassword}/>
-            <div className='mb-4'/>
-            <NeutralButtonXL text={name} submit={(e) => handleSubmit(e)}/>
+            <div className="messages">
+                {messages.map((msg, idx) => (
+                    <div key={idx} className="message">{msg}</div>
+                ))}
+            </div>
         </form>
-    } />
+    </div>
 }
 
 export default Form;
