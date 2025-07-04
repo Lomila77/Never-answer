@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+    name: "LaijaAI";
+    default: true;
+    prefersdark: true;
+    color-scheme: "light";
+    --color-base-100: #f8f4e1;
+    --color-base-200: #d2bfad;
+    --color-base-300: #a4805b;
+    --color-base-content: #292524;
+    --color-primary: #af8f6f;
+    --color-primary-content: #292524;
+    --color-secondary: #74512d;
+    --color-secondary-content: #e2dad2;
+    --color-accent: #543310;
+    --color-accent-content: #dbd3cc;
+    --color-neutral: #f8f4e1;
+    --color-neutral-content: #292524;
+    --color-info: #fef08a;
+    --color-info-content: #161407;
+    --color-success: #bef264;
+    --color-success-content: #0d1403;
+    --color-warning: #fbbf24;
+    --color-warning-content: #150d00;
+    --color-error: #ff0000;
+    --color-error-content: #160000;
+    --radius-selector: 1rem;
+    --radius-field: 1rem;
+    --radius-box: 1rem;
+    --size-selector: 0.3125rem;
+    --size-field: 0.3125rem;
+    --border: 2px;
+    --depth: 1;
+    --noise: 0;
+  }
