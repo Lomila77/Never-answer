@@ -1,7 +1,8 @@
 import logging
 from fastapi import FastAPI, WebSocket
 import uvicorn
-from backend.app.weboscket import stream_ollama_response
+from backend.app.weboscket import stream_ollama_response, mock_stream_ollama_response
+import json
 
 app = FastAPI()
 
@@ -20,10 +21,9 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        async for chunk in stream_ollama_response(data):
-            await websocket.send_text(chunk["response"])
-            if chunk["done"]:
-                break
+        async for chunk in mock_stream_ollama_response(data):
+            response_data = json.loads(chunk)
+            await websocket.send_text(response_data["response"])
 
 
 if __name__ == "__main__":

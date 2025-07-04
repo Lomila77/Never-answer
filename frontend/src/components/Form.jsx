@@ -12,12 +12,15 @@ function Form({route, method}) {
 
     useEffect(() => {
         // Remplacez l'URL par celle de votre backend WebSocket
-        ws.current = new WebSocket("ws://localhost:3001");
+        ws.current = new WebSocket("ws://localhost:8000/ws");
         ws.current.onopen = () => {
             console.log("WebSocket connecté");
         };
         ws.current.onmessage = (event) => {
-            setMessages(prev => [...prev, event.data]);
+            setMessages(prev => [
+                ...prev,
+                { from: "ia", text: event.data }
+            ]);
         };
         ws.current.onerror = (err) => {
             alert("Erreur WebSocket : " + err.message);
@@ -34,6 +37,11 @@ function Form({route, method}) {
         e.preventDefault();
         setLoading(true);
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            // Ajoute le message utilisateur à la liste
+            setMessages(prev => [
+                ...prev,
+                { from: "user", text: message }
+            ]);
             ws.current.send(message);
             setMessage("");
         } else {
@@ -59,11 +67,6 @@ function Form({route, method}) {
             <div className='mb-4'/>
             <Button theme={"dark"} text="Envoyer" submit={handleSubmit}/>
             <div className='mb-4'/>
-            <div className="messages">
-                {messages.map((msg, idx) => (
-                    <div key={idx} className="message">{msg}</div>
-                ))}
-            </div>
         </form>
     </div>
 }
