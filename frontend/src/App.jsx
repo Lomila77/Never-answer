@@ -4,9 +4,10 @@ import './styles/style.css'
 import Home from './pages/Home'
 import Background from './components/Background'
 import Header from './components/Header'
+import Footer from './components/Footer'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [route, setRoute] = useState("ws://localhost:8000/ws")
 
   return (
     <BrowserRouter>
@@ -14,9 +15,10 @@ function App() {
         <Header />
         <Background componentChildren={
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home route={route} />} />
           </Routes>
         } />
+        <Footer setRoute={setRoute} />
       </div>
     </BrowserRouter>
   )

@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Cadre from "./Cadre";
 import Chat from "./Chat";
 
-function Form({route, method}) {
+function Form({route}) {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const ws = useRef(null);
 
     useEffect(() => {
-        // Remplacez l'URL par celle de votre backend WebSocket
-        ws.current = new WebSocket("ws://localhost:8000/ws");
+        setMessages([]);
+        ws.current = new WebSocket(route);
         ws.current.onopen = () => {
             console.log("WebSocket connecté");
         };
@@ -31,13 +31,13 @@ function Form({route, method}) {
         return () => {
             ws.current && ws.current.close();
         };
-    }, []);
+    }, [route]);
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            // Ajoute le message utilisateur à la liste
             setMessages(prev => [
                 ...prev,
                 { from: "user", text: message }
