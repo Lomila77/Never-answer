@@ -1,6 +1,6 @@
 const Chat = ({ messages }) => {
     return (
-        <div>
+        <div className="min-h-0">
             {messages.map((msg, idx) => (
                 <div
                     key={idx}

@@ -1,11 +1,23 @@
+import { useEffect, useRef } from 'react';
+
 const Cadre = ({ size, componentChildren }) => {
-    const classname = size === "small" ? "flex flex-col items-center justify-center bg-neutral size-16 rounded-full inset-shadow-sm box-border border-4 border-accent" :
-        "flex flex-col bg-emerald-50 justify-center w-100 m-5 rounded-lg shadow-neutral-900 overflow-y-auto max-h-[500px] p-4"
+  const bottomRef = useRef(null);
 
-    return <div className={classname}>
-            {componentChildren}
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [componentChildren]); // déclenche sur changement de contenu
+
+  const classname =
+    size === "small bg-emerald-50 min-h-0"
+      ? "flex flex-col items-center justify-center"
+      : "flex flex-col bg-emerald-50 justify-end w-full overflow-y-auto max-h-[80vh] p-4";
+
+  return (
+    <div className={classname}>
+      {componentChildren}
+      <div classname="bottom flex" ref={bottomRef} />
     </div>
-
-}
+  );
+};
 
 export default Cadre;

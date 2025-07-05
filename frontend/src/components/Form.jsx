@@ -51,11 +51,11 @@ function Form({route}) {
         setLoading(false);
     }
 
-    return <div className="min-h-0 flex-1">
+    return <div className="min-h-0 flex-1 pb-4 flex flex-col justify-end">
             <Cadre size={"large"} componentChildren={
                 <Chat messages={messages}/>
             }/>
-        <div className="border border-gray-600 rounded-3xl drop-shadow-xl">
+        <div className="border m-4 border-gray-600 rounded-3xl drop-shadow-xl">
             <form
             onSubmit={handleSubmit}
             className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
@@ -68,7 +68,7 @@ function Form({route}) {
                 className="flex-1 px-4 py-2 focus:outline-none  disabled:bg-gray-100"
                 disabled={loading}
                 />
-    
+
                 <button
                 type="submit"
                 disabled={loading}
