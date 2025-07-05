@@ -4,7 +4,10 @@ import uvicorn
 from backend.app.weboscket import stream_ollama_response, mock_stream_ollama_response
 import json
 from backend.api.prompt import PROMPT_TEMPLATE, PROMPT_TEMPLATE_COURSE, PROMPT_TEMPLATE_EVALUATION
+from backend.app.rag import RAG
+
 app = FastAPI()
+rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
 
 
 @app.post("/")
@@ -21,7 +24,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        prompt = PROMPT_TEMPLATE + data
+        prompt = PROMPT_TEMPLATE.format(user_query=data)
         async for chunk in mock_stream_ollama_response(prompt):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
@@ -32,7 +35,8 @@ async def websocket_endpoint_course(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        prompt = PROMPT_TEMPLATE_COURSE + data
+        ressource = rag.similarity_search(data)
+        prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource, user_query=data)
         async for chunk in mock_stream_ollama_response(prompt):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
@@ -43,7 +47,8 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
-        prompt = PROMPT_TEMPLATE_EVALUATION + data
+        ressource = rag.similarity_search(data)
+        prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource, user_query=data)
         async for chunk in mock_stream_ollama_response(prompt):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
