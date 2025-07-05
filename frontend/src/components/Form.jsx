@@ -56,7 +56,7 @@ function Form({route, title}) {
         setLoading(false);
     }
 
-    return <div className={`min-h-0 flex-1 pb-4 flex flex-col ${messages && messages.length > 0 ? "justify-end" : "justify-center gap-6"}`}>
+    return <div className={`min-h-0 flex-1 pb-4 flex flex-col ${messages && messages.length > 0 ? "justify-end" : "justify-center gap-6 max-w-4xl self-center"}`}>
             <Cadre size={messages && messages.length > 0 ? "msg" : "text"} componentChildren={
                 messages && messages.length > 0
                 ? <Chat messages={messages} />

@@ -1,24 +1,25 @@
 import { useEffect, useRef } from 'react';
 
 const Cadre = ({ size, componentChildren }) => {
-  const bottomRef = useRef(null);
+  const containerRef = useRef(null);
+
 
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-;
-
-  }, [componentChildren]); // déclenche sur changement de contenu
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    }
+  }, [componentChildren]);
 
   const classname =
     size === "text"
-      ? "flex flex-col items-center justify-center"
-      : "flex flex-col justify-end w-full overflow-y-auto max-h-[80vh] p-4";
-// changer icic le css pour que le stext soi au centre si p
+      ? "flex flex-col items-center justify-center "
+      : "flex flex-col justify-end w-full overflow-y-auto p-4";
   return (
-    <div className={classname}>
+    <div ref={containerRef} className={classname}>
       {componentChildren}
-      <div classname="bottom flex" ref={bottomRef} />
+      <div className="bottom"  />
     </div>
   );
 };
