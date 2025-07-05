@@ -8,9 +8,9 @@ const Cadre = ({ size, componentChildren }) => {
   }, [componentChildren]); // déclenche sur changement de contenu
 
   const classname =
-    size === "small bg-emerald-50 min-h-0"
+    size === "small min-h-0"
       ? "flex flex-col items-center justify-center"
-      : "flex flex-col bg-emerald-50 justify-end w-full overflow-y-auto max-h-[80vh] p-4";
+      : "flex flex-col  justify-end w-full overflow-y-auto max-h-[80vh] p-4";
 
   return (
     <div className={classname}>
