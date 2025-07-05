@@ -7,6 +7,17 @@ html, body, #root {
     padding: 0;
   }
 
+  @layer base {
+    body {
+      @apply text-gray-800;
+    }
+  }
+
+  :root {
+    --primary: #04A3A9;
+    --secondary: #
+  }
+
 
 /* @plugin "daisyui/theme" {
     name: "LaijaAI";

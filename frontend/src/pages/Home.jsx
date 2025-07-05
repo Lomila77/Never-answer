@@ -18,9 +18,9 @@ function Home({route}) {
 
     // return <Plank componentChildren={
         return (
-        <div className='h-screen w-full flex-col'>
-             <h1 className='text-5xl text-center text-emerald-500'>{title}</h1>
-            <Form route={route} />
+        <div className='h-screen flex w-full flex-col'>
+             <h1 className='text-5xl text-center p-2 text-[var(--primary)] drop-shadow-lg '>{title}</h1>
+            <Form route={route} title={title} />
         </div>
         )
 }

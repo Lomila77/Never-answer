@@ -45,7 +45,7 @@ const SideBar = ({ setRoute }) => {
             <button
               onClick={() => handleButtonClick(button.route)}
               className={`active:scale-95 transition-transform p-2 w-full rounded-lg ${
-                activeButton === button.route ? 'bg-[#04A3A9]/10' : ''
+                activeButton === button.route ? 'bg-[var(--primary)]/10' : ''
               }`}
             >
               {React.cloneElement(button.icon, {
