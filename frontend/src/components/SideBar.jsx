@@ -33,7 +33,7 @@ const SideBar = ({ setRoute }) => {
   ];
 
   return (
-    <drawer className="felx flex-col bg-white shadow-2xl text-primary-content w-16 md:w-20 ">
+    <div className="flex flex-col bg-white shadow-2xl text-primary-content w-16 md:w-20 ">
       <div className="flex flex-col py-2 w-full items-center gap-6">
       {buttons.map((button) => (
           <div
@@ -66,7 +66,7 @@ const SideBar = ({ setRoute }) => {
           </div>
         ))}
       </div>
-    </drawer>
+    </div>
   );
 };
 

@@ -18,6 +18,7 @@ function Form({route, title}) {
 
     useEffect(() => {
         setMessages([]);
+        if (!route) return;
         ws.current = new WebSocket(route);
         ws.current.onopen = () => {
             console.log("WebSocket connecté");
@@ -29,14 +30,18 @@ function Form({route, title}) {
             ]);
         };
         ws.current.onerror = (err) => {
-            alert("Erreur WebSocket : " + err.message);
+            console.error("Erreur WebSocket : " + err.message); // permet d'eviter les alertes dans onerror ce qui peux bloquer
         };
         ws.current.onclose = () => {
             console.log("WebSocket déconnecté");
         };
         return () => {
-            ws.current && ws.current.close();
-        };
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+              console.log("Closing websocket...");
+              ws.current.close();
+            }
+            ws.current = null;
+          };
     }, [route]);
 
 
