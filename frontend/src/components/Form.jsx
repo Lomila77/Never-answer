@@ -24,10 +24,12 @@ function Form({route, title}) {
             console.log("WebSocket connecté");
         };
         ws.current.onmessage = (event) => {
+            console.log("Réponse de l'IA :", event.data); // 👈 Ajoute ceci
             setMessages(prev => [
                 ...prev,
                 { from: "ia", text: event.data }
             ]);
+            setLoading(false)
         };
         ws.current.onerror = (err) => {
             console.error("Erreur WebSocket : " + err.message); // permet d'eviter les alertes dans onerror ce qui peux bloquer
@@ -58,7 +60,6 @@ function Form({route, title}) {
         } else {
             alert("WebSocket non connecté");
         }
-        setLoading(false);
     }
 
     return <div className={`min-h-0 flex-1 pb-4 flex flex-col ${messages && messages.length > 0 ? "justify-end" : "justify-center gap-6 max-w-4xl self-center"}`}>
@@ -67,7 +68,7 @@ function Form({route, title}) {
                 ? <Chat messages={messages} />
                 : <p className="text-gray-400 text-center p-6 whitespace-pre-line">{description[title]}</p>
             }/>
-            <div className="border m-4 border-gray-400 rounded-3xl drop-shadow-xl">
+            <div className=" m-4 bg-white/70 border-gray-400 rounded-3xl drop-shadow-xl">
             <form
             onSubmit={handleSubmit}
             className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
@@ -77,8 +78,7 @@ function Form({route, title}) {
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder="Votre message"
-                className="flex-1 px-4 py-2 focus:outline-none  disabled:bg-gray-100"
-                disabled={loading}
+                className="flex-1 px-4 py-2 focus:outline-none disabled:bg-gray-100"
                 />
 
                 <button
