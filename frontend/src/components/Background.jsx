@@ -1,5 +1,5 @@
 const Background = ({ componentChildren }) => {
-    return <div className="flex flex-col items-center justify-center p-8 bg-neutral w-full h-full">
+    return <div className="flex flex-shrink flex-col items-center justify-center bg-emerald-50 w-full h-full">
             {componentChildren}
         </div>
 }

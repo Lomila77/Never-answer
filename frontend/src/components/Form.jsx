@@ -3,6 +3,7 @@ import Button from "./Button";
 import { useEffect, useRef, useState } from "react";
 import Cadre from "./Cadre";
 import Chat from "./Chat";
+import { SendHorizonal } from "lucide-react";
 
 function Form({route}) {
     const [message, setMessage] = useState("");
@@ -50,24 +51,33 @@ function Form({route}) {
         setLoading(false);
     }
 
-    return <div>
+    return <div className="min-h-0 flex-1">
             <Cadre size={"large"} componentChildren={
                 <Chat messages={messages}/>
             }/>
-            <form onSubmit={handleSubmit} className="form-container">
-                <div className='mb-4'/>
+        <div className="border border-gray-600 rounded-3xl drop-shadow-xl">
+            <form
+            onSubmit={handleSubmit}
+            className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
+            >
                 <input
                 type="text"
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder="Votre message"
-                className="input"
+                className="flex-1 px-4 py-2 focus:outline-none  disabled:bg-gray-100"
                 disabled={loading}
-            />
-            <div className='mb-4'/>
-            <Button theme={"dark"} text="Envoyer" submit={handleSubmit}/>
-            <div className='mb-4'/>
-        </form>
+                />
+    
+                <button
+                type="submit"
+                disabled={loading}
+                className="bg-emerald-400 text-white px-4 py-2 rounded-full hover:bg-emerald-700 disabled:opacity-50"
+                >
+                    <SendHorizonal size={28} strokeWidth={1.75} absoluteStrokeWidth />
+                </button>
+            </form>
+        </div>
     </div>
 }
 

@@ -6,7 +6,7 @@ const Chat = ({ messages }) => {
                     key={idx}
                     className={`chat ${msg.from === "ia" ? "chat-start" : "chat-end"}`}
                 >
-                    <div className="chat-bubble">{msg.text}</div>
+                    <div className="bg-white p-2 rounded-lg shadow-lg shadow-emerald-100">{msg.text}</div>
                 </div>
             ))}
         </div>

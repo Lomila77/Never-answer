@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 
 function Home({route}) {
     const [title, setTitle] = useState("Chat");
-    
+
     useEffect(() => {
         setTitle(
             route.includes("course")
@@ -16,12 +16,15 @@ function Home({route}) {
         );
     }, [route]);
 
-    return <Plank componentChildren={
-        <div className='flex flex-col items-start justify-start'>
-            <Title size={"large"} content={title} />
+    // return <Plank componentChildren={
+        return (
+        <div className='h-screen flex flex-col'>
+            {/* <Title size={"large"} content={title} />
+             */}
+             <h1 className='text-5xl text-emerald-500'>{title}</h1>
             <Form route={route} />
         </div>
-    } />
+        )
 }
 
 export default Home;
