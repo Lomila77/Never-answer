@@ -16,15 +16,15 @@ const Selection = ({handlesubmitSelection}) => {
     ];
     return (
         <div className='bg-white *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 w-full max-w-3xl mx-auto'>
-            <h2 className='text-3xl ! text-center font-bold p-2 drop-shadow-lg'>Select a Topic</h2>
+            <h2 className='text-3xl ! text-center font-bold p-2  drop-shadow-[var(--primary)]/70 brightness-100'>Select a Topic</h2>
             <div className='grid grid-cols-3 grid-rows-3 justify-center gap-4'>
                 {choices.map((choice, index) => (
                     <button
                         key={index}
                         onClick={() => setSelectedIndex(index)}
                         className={`
-                            px-4 py-2 rounded
-                            transition-all duration-200
+                            px-4 py-2 rounded-full
+                            transition-all duration-200 bg-[var(--secondary)]/  text-[var(--primary)] font-semibold
                             ${selectedIndex === index
                               ? 'bg-gradient-to-r shadow-emerald-400/40 shadow-lg from-[var(--primary)] brightness-110 to-emerald-400 text-white'
                             //   ? 'bg-gradient-to-r shadow-[0_2px_10px_var(--primary)]/50 from-[var(--primary)] brightness-110 to-emerald-400 text-white'
@@ -32,7 +32,7 @@ const Selection = ({handlesubmitSelection}) => {
                             }
                             hover:scale-120
                           `}
-                                            >
+                            >
                         {choice}
                     </button>
                 ))}
