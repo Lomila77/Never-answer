@@ -1,7 +1,6 @@
 from typing import AsyncGenerator
 import json
 import asyncio
-import numpy as np
 from transformers import AutoTokenizer
 import socket
 import os
@@ -13,8 +12,8 @@ class Model:
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY")
         self.groq_client = Groq(api_key=self.groq_api_key)
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "meta-llama/Meta-Llama-3-8B-Instruct")
+        # self.tokenizer = AutoTokenizer.from_pretrained(
+        #     "meta-llama/Meta-Llama-3-8B-Instruct")
 
     def is_online(self) -> bool:
         """
@@ -34,7 +33,6 @@ class Model:
         """
         Fonction mock pour simuler des réponses de l'IA.
         """
-        import asyncio
         fake_responses = [
             json.dumps({"response": "Ceci est une réponse simulée 1."}),
             json.dumps({"response": "Ceci est une réponse simulée 2."}),
@@ -105,32 +103,32 @@ class Model:
             yield chunk
 
     # TODO: On attends la machine pour tester
-    async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
-        tokens = self.tokenizer(
-            prompt + user_query, return_tensors="np", add_special_tokens=False)["input_ids"]
-        input_ids = tokens[0].tolist()
-        with open("input.json", "w") as f:
-            json.dump({"input_ids": input_ids}, f)
-        with open("input_list.txt", "w") as f:
-            f.write("input.json\n")
+    # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
+    #     tokens = self.tokenizer(
+    #         prompt + user_query, return_tensors="np", add_special_tokens=False)["input_ids"]
+    #     input_ids = tokens[0].tolist()
+    #     with open("input.json", "w") as f:
+    #         json.dump({"input_ids": input_ids}, f)
+    #     with open("input_list.txt", "w") as f:
+    #         f.write("input.json\n")
 
-        process = await asyncio.create_subprocess_exec(
-            "snpe-net-run",
-            "--container", "llama3-8b-instruct.dlc",
-            "--input_list", "input_list.txt",
-            "--use_dsp",
-            "--output_dir", "output",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        await process.communicate()
+    #     process = await asyncio.create_subprocess_exec(
+    #         "snpe-net-run",
+    #         "--container", "llama3-8b-instruct.dlc",
+    #         "--input_list", "input_list.txt",
+    #         "--use_dsp",
+    #         "--output_dir", "output",
+    #         stdout=asyncio.subprocess.PIPE,
+    #         stderr=asyncio.subprocess.DEVNULL
+    #     )
+    #     await process.communicate()
 
-        logits = np.fromfile("output/OUTPUT_0.raw", dtype=np.float32)
-        seq_len = len(input_ids)
-        vocab_size = logits.size // seq_len
-        logits = logits.reshape((1, seq_len, vocab_size))  # [B, T, V]
+    #     logits = np.fromfile("output/OUTPUT_0.raw", dtype=np.float32)
+    #     seq_len = len(input_ids)
+    #     vocab_size = logits.size // seq_len
+    #     logits = logits.reshape((1, seq_len, vocab_size))  # [B, T, V]
 
-        preds = np.argmax(logits, axis=-1)[0]
-        generated = self.tokenizer.decode(preds)
+    #     preds = np.argmax(logits, axis=-1)[0]
+    #     generated = self.tokenizer.decode(preds)
 
-        yield json.dumps({"response": generated})
+    #     yield json.dumps({"response": generated})
