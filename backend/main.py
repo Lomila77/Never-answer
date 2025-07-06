@@ -1,11 +1,13 @@
-import logging
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import uvicorn
-from backend.app.weboscket import Model
 import json
-from backend.api.prompt import PROMPT_TEMPLATE, PROMPT_TEMPLATE_COURSE, PROMPT_TEMPLATE_EVALUATION
-from backend.app.rag import RAG
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from backend.app.weboscket import Model
+# from backend.app.rag import RAG
 from dotenv import load_dotenv
+from backend.api.prompt import (
+    PROMPT_TEMPLATE,
+    PROMPT_TEMPLATE_COURSE,
+    PROMPT_TEMPLATE_EVALUATION)
 
 load_dotenv()
 
