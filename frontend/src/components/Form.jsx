@@ -5,6 +5,9 @@ import Cadre from "./Cadre";
 import Chat from "./Chat";
 import { SendHorizonal } from "lucide-react";
 import VoiceChat from "./Recorder";
+import {blobToBase64, textToBase64, base64ToText, base64ToBlob} from "../utils";
+
+
 
 function Form({route, title}) {
     const [message, setMessage] = useState("");
@@ -20,16 +23,28 @@ function Form({route, title}) {
     useEffect(() => {
         setMessages([]);
         if (!route) return;
+        console.log("Connecting to WebSocket at", route);
         ws.current = new WebSocket(route);
         ws.current.onopen = () => {
             console.log("WebSocket connecté");
         };
         ws.current.onmessage = (event) => {
             console.log("Réponse de l'IA :", event.data); // 👈 Ajoute ceci
-            setMessages(prev => [
+            const data = JSON.parse(event.data);
+            if (data.audio) {
+                const audioBlob = base64ToBlob(data.audio);
+                setMessages(prev => [
+                    ...prev,
+                    { from: "ia", audio: audioBlob }
+                ]);
+            }
+            else if (data.text) {
+                const text = base64ToText(data.text);
+                setMessages(prev => [
                 ...prev,
-                { from: "ia", text: event.data }
+                { from: "ia", text: text }
             ]);
+            }
             setLoading(false)
         };
         ws.current.onerror = (err) => {
@@ -47,29 +62,62 @@ function Form({route, title}) {
           };
     }, [route]);
 
-    const sendAudio = (blob) => {
+    const sendAudio = async (blob) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(blob);
+            const base64Audio = await blobToBase64(blob);
+            const message = {
+              audio: base64Audio,
+            };
+            ws.current.send(JSON.stringify(message));
             setMessages(prev => [...prev, { from: "user", audio: blob }]);
         } else {
             alert("WebSocket non connecté");
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        if (message === "")
+            return;
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             setMessages(prev => [
                 ...prev,
                 { from: "user", text: message }
             ]);
-            ws.current.send(message);
+            const base64text = await textToBase64(message);
+            const message64 = {
+              text: base64text,
+            };
+            ws.current.send(JSON.stringify( message64));
             setMessage("");
         } else {
             alert("WebSocket non connecté");
         }
     }
+    // a tester pour voir la performance
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     if (message === "") return;
+    //     setLoading(true);
+    //     // Décale le travail lourd (base64 + WebSocket) pour ne pas bloquer le thread principal
+    //     setTimeout(async () => {
+    //       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+    //         const base64text = await textToBase64(message);
+    //         const message64 = {
+    //           text: base64text,
+    //         };
+    //         ws.current.send(JSON.stringify(message64));
+    //         setMessages(prev => [
+    //           ...prev,
+    //           { from: "user", text: message }
+    //         ]);
+    //         setMessage("");
+    //       } else {
+    //         alert("WebSocket non connecté");
+    //       }
+    //     }, 0);
+    //   };
 
     return <div className={`min-h-0 flex-1 pb-4 flex flex-col ${messages && messages.length > 0 ? "justify-end" : "justify-center gap-6 max-w-4xl self-center"}`}>
             <Cadre size={messages && messages.length > 0 ? "msg" : "text"} componentChildren={
@@ -114,4 +162,5 @@ function Form({route, title}) {
     </div>
 }
 
-export default Form;
+
+ export default Form;

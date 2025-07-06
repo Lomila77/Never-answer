@@ -36,14 +36,14 @@ export default function VoiceChat({ route, sendAudio }) {
         <div>
             <h2>Chat vocal</h2>
             <button onClick={recording ? stopRecording : startRecording}
-            className={`btn btn-gray-400 size-10 flex items-center justify-center
+            className={`btn btn-gray-400 size-10 flex border-none items-center justify-center
                 ${recording ? "bg-[var(--primary)] hover:scale-110 hover:brightess-100" :
                      "bg-gray-400 hover:bg-gradient-to-r from-[var(--primary)] to-emerald-400 "}
                       rounded-full p-4 shadow-lg active:scale-95
                     transition-all duration-200`}
             >
                 <Mic className=" text-white absolute" />
-                <span class={`absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75` + (recording ? "animate-ping" : "")}>
+                <span className={`absolute inline-flex size-12 rounded-full -z-10 bg-sky-400 opacity-75` + (recording ? "animate-ping" : "")}>
                     </span>
                 {/* <span class="relative inline-flex size-10 -z-30 rounded-full bg-sky-500">
                     </span> */}
