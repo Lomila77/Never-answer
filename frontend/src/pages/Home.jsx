@@ -24,16 +24,16 @@ function Home({route}) {
         setIsSelectionComplete(true);
         console.log("Selection submitted:", selection);
     }
-
+// remettre le code de la selection
     return (
-    !isSelectionComplete ? (
-        <Selection handlesubmitSelection={handleSubmitSelection} />
-    ) : (
+    // !isSelectionComplete ? (
+    //     <Selection handlesubmitSelection={handleSubmitSelection} />
+    // ) : (
         <div className='h-screen flex w-full flex-col'>
-            <h1 className='text-5xl text-center p-2 text-[var(--primary)]/70 drop-shadow-lg '>{title}</h1>
+            <h1 className='text-xl text-left p-2 text-[var(--primary)] font-bold drop-shadow-lg '>{title}</h1>
             <Form route={route} title={title} />
         </div>
-    )
+    // )
 );
 }
 

@@ -6,8 +6,14 @@ const Chat = ({ messages }) => {
                     key={idx}
                     className={`chat ${msg.from === "ia" ? "chat-start" : "chat-end"}`}
                 >
-                    <div className="bg-white text-[#333333] p-2 rounded-lg shadow-lg">{msg.text}</div>
-                </div>
+                    {msg.audio ? (
+                        <audio controls className="bg-white text-[#333333] p-2 rounded-lg shadow-lg shadow-[#04A3A9]/20">
+                            <source src={URL.createObjectURL(msg.audio)} type="audio/webm" />
+                            Your browser does not support the audio element.
+                        </audio>
+                    ) :
+                    <div className="bg-white text-[#333333] p-2 rounded-lg shadow-lg shadow-[#04A3A9]/20">{msg.text}</div>
+}                </div>
             ))}
         </div>
     );

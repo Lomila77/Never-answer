@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Cadre from "./Cadre";
 import Chat from "./Chat";
 import { SendHorizonal } from "lucide-react";
+import VoiceChat from "./Recorder";
 
 function Form({route, title}) {
     const [message, setMessage] = useState("");
@@ -46,6 +47,14 @@ function Form({route, title}) {
           };
     }, [route]);
 
+    const sendAudio = (blob) => {
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(blob);
+            setMessages(prev => [...prev, { from: "user", audio: blob }]);
+        } else {
+            alert("WebSocket non connecté");
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -73,6 +82,7 @@ function Form({route, title}) {
             onSubmit={handleSubmit}
             className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
             >
+                <VoiceChat sendAudio={sendAudio}/>
                 <input
                 type="text"
                 value={message}
