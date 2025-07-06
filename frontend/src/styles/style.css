@@ -1,7 +1,29 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-@plugin "daisyui/theme" {
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  @layer base {
+    body {
+      @apply text-gray-800;
+    }
+  }
+
+  :root {
+    --primary: #04A3A9;
+    --secondary: #
+  }
+
+  /* h1, h2, h3, h4, h5, h6, p {
+    filter: brightness(120%);
+  } */
+
+
+/* @plugin "daisyui/theme" {
     name: "LaijaAI";
     default: true;
     prefersdark: true;
@@ -34,4 +56,4 @@
     --border: 2px;
     --depth: 1;
     --noise: 0;
-  }
+  } */
