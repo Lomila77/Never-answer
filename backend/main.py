@@ -1,5 +1,6 @@
 import uvicorn
 import json
+import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from backend.app.weboscket import Model
 # from backend.app.rag import RAG
@@ -9,11 +10,16 @@ from backend.api.prompt import (
     PROMPT_TEMPLATE_COURSE,
     PROMPT_TEMPLATE_EVALUATION)
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 load_dotenv()
 
 app = FastAPI()
 # rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
 model_caller = Model()
+logger = logging.getLogger("")
 
 
 @app.websocket("/ws")
@@ -22,7 +28,8 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.accept()
         while True:
             data: str = await websocket.receive_text()
-            user_input: dict = json.load(data)
+            logger.info(f"Data: {data}")
+            user_input: dict = json.loads(data)
             if "audio" in user_input:
                 audio_response = model_caller.groq_voice_chat(
                     user_input["audio"], PROMPT_TEMPLATE)
@@ -31,17 +38,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 async for chunk in model_caller.stream_text_response(
                         PROMPT_TEMPLATE, user_input["text"]):
                     text_response = json.loads(chunk)
-                    await websocket.send_json({"text": text_response})
+                    logger.info(f"Send: {text_response["response"]}")
+                    await websocket.send_json({"text": text_response["response"]})
             else:
                 raise ValueError("Unproccessable entity")
     except WebSocketDisconnect:
-        print("Websocket disconnected")
-        return {"success": "Webscocket closed"}
+        logger.info("Websocket closed")
     except ValueError as e:
-        print(e)
-        return {"error": e}
-    finally:
-        await websocket.close()
+        logger.error(f"{e}")
 
 
 @app.websocket("/ws/course")
@@ -58,13 +62,9 @@ async def websocket_endpoint_course(websocket: WebSocket):
                 response_data = json.loads(chunk)
                 await websocket.send_text(response_data["response"])
     except WebSocketDisconnect:
-        print("Websocket disconnected")
-        return {"success": "Webscocket closed"}
+        logger.info("Websocket closed")
     except ValueError as e:
-        print(e)
-        return {"error": e}
-    finally:
-        await websocket.close()
+        logger.error(f"{e}")
 
 
 @app.websocket("/ws/evaluation")
@@ -81,13 +81,9 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
                 response_data = json.loads(chunk)
                 await websocket.send_text(response_data["response"])
     except WebSocketDisconnect:
-        print("Websocket disconnected")
-        return {"success": "Webscocket closed"}
+        logger.info("Websocket closed")
     except ValueError as e:
-        print(e)
-        return {"error": e}
-    finally:
-        await websocket.close()
+        logger.error(f"{e}")
 
 
 if __name__ == "__main__":
