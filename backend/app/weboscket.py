@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 import socket
 import os
 from groq import Groq
+import random
 
 
 class Model:
@@ -15,10 +16,12 @@ class Model:
         # self.tokenizer = AutoTokenizer.from_pretrained(
         #     "meta-llama/Meta-Llama-3-8B-Instruct")
 
+    # TODO: delete return False
     def is_online(self) -> bool:
         """
         Vérifie la connexion à Internet en tentant d'atteindre un DNS public (Cloudflare).
         """
+        return False
         host: str = "1.1.1.1"
         port: int = 53
         timeout: float = 1.5
@@ -34,13 +37,19 @@ class Model:
         Fonction mock pour simuler des réponses de l'IA.
         """
         fake_responses = [
-            json.dumps({"response": "Ceci est une réponse simulée 1."}),
-            json.dumps({"response": "Ceci est une réponse simulée 2."}),
-            json.dumps({"response": "Ceci est une réponse simulée 3."}),
+            json.dumps({"response": "OK."}),
+            json.dumps({"response": "Bien sûr !"}),
+            json.dumps({"response": "Voici une réponse un peu plus longue pour tester le comportement du chat."}),
+            json.dumps({"response": "D'accord, je vais m'en occuper."}),
+            json.dumps({"response": "Ceci est un message très court."}),
+            json.dumps({"response": "Voici une réponse très détaillée qui explique en plusieurs phrases comment fonctionne le système de mock. Cela permet de vérifier l'affichage des messages longs dans l'interface utilisateur et de s'assurer que tout reste lisible."}),
+            json.dumps({"response": "Test."}),
+            json.dumps({"response": "Merci pour votre question, je vais y répondre dans un instant."}),
+            json.dumps({"response": "Réponse intermédiaire, ni trop longue ni trop courte."}),
+            json.dumps({"response": "Ceci est un exemple de message généré aléatoirement pour simuler une interaction avec l'IA dans différents cas d'usage."}),
         ]
-        for fake in fake_responses:
-            await asyncio.sleep(0.5)  # Simule un délai de streaming
-            yield fake
+        await asyncio.sleep(0.5)  # Simule un délai de streaming
+        yield random.choice(fake_responses)
 
     def groq_speech_to_text(self, audio: bytes) -> str:
         response = self.groq_client.audio.transcriptions.create(
@@ -70,13 +79,15 @@ class Model:
         audio_response: bytes = self.groq_text_to_speech(
             message=model_response)
         return audio_response
-    
+
+    # TODO: replace the mock by real function
     async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
         if self.is_online():
             async for chunk in self.stream_groq_response(prompt, user_query, model):
                 yield chunk
         else:
-            async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
+            #async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
+            async for chunk in self.mock_stream_ollama_response():
                 yield chunk
 
     async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
