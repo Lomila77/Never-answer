@@ -76,19 +76,19 @@ function Form({route, title}) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (message === "") return;
         setLoading(true);
-        if (message === "")
-            return;
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             setMessages(prev => [
                 ...prev,
                 { from: "user", text: message }
             ]);
-            ws.current.send(JSON.stringify({text: message}))
+            ws.current.send(JSON.stringify({text: message}));
             setMessage("");
         } else {
             alert("WebSocket non connecté");
         }
+        setLoading(false);
     }
     // a tester pour voir la performance
     // const handleSubmit = (e) => {
@@ -136,7 +136,7 @@ function Form({route, title}) {
 
                 <button
                 type="submit"
-                //disabled={loading}
+                disabled={loading}
                   className="
                     bg-gradient-to-r from-[var(--primary)] to-emerald-400
                     text-white px-4 py-2 rounded-full disabled:opacity-50
