@@ -16,10 +16,12 @@ class Model:
         # self.tokenizer = AutoTokenizer.from_pretrained(
         #     "meta-llama/Meta-Llama-3-8B-Instruct")
 
+    # TODO: delete return False
     def is_online(self) -> bool:
         """
         Vérifie la connexion à Internet en tentant d'atteindre un DNS public (Cloudflare).
         """
+        return False
         host: str = "1.1.1.1"
         port: int = 53
         timeout: float = 1.5
@@ -77,13 +79,15 @@ class Model:
         audio_response: bytes = self.groq_text_to_speech(
             message=model_response)
         return audio_response
-    
+
+    # TODO: replace the mock by real function
     async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
         if self.is_online():
             async for chunk in self.stream_groq_response(prompt, user_query, model):
                 yield chunk
         else:
-            async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
+            #async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
+            async for chunk in self.mock_stream_ollama_response():
                 yield chunk
 
     async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
