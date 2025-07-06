@@ -39,10 +39,9 @@ function Form({route, title}) {
                 ]);
             }
             else if (data.text) {
-                const text = base64ToText(data.text);
                 setMessages(prev => [
                 ...prev,
-                { from: "ia", text: text }
+                { from: "ia", text: data.text }
             ]);
             }
             setLoading(false)
@@ -85,11 +84,7 @@ function Form({route, title}) {
                 ...prev,
                 { from: "user", text: message }
             ]);
-            const base64text = await textToBase64(message);
-            const message64 = {
-              text: base64text,
-            };
-            ws.current.send(JSON.stringify( message64));
+            ws.current.send(JSON.stringify({text: message}))
             setMessage("");
         } else {
             alert("WebSocket non connecté");
@@ -141,7 +136,7 @@ function Form({route, title}) {
 
                 <button
                 type="submit"
-                disabled={loading}
+                //disabled={loading}
                   className="
                     bg-gradient-to-r from-[var(--primary)] to-emerald-400
                     text-white px-4 py-2 rounded-full disabled:opacity-50

@@ -1,70 +1,89 @@
-import logging
-from fastapi import FastAPI, WebSocket
 import uvicorn
-from backend.app.weboscket import Model
 import json
-from backend.api.prompt import PROMPT_TEMPLATE, PROMPT_TEMPLATE_COURSE, PROMPT_TEMPLATE_EVALUATION
-from backend.app.rag import RAG
+import logging
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from backend.app.weboscket import Model
+# from backend.app.rag import RAG
 from dotenv import load_dotenv
+from backend.api.prompt import (
+    PROMPT_TEMPLATE,
+    PROMPT_TEMPLATE_COURSE,
+    PROMPT_TEMPLATE_EVALUATION)
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 load_dotenv()
 
 app = FastAPI()
-#rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
+# rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
 model_caller = Model()
-
-
-@app.post("/")
-def main() -> dict[str, str]:
-    try:
-        pass
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return {"error": str(e)}
+logger = logging.getLogger("")
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        user_query = await websocket.receive_text()
-        async for chunk in model_caller.stream_text_response(
-                prompt=PROMPT_TEMPLATE, user_query=user_query):
-            response_data = json.loads(chunk)
-            await websocket.send_text(response_data["response"])
+    try:
+        await websocket.accept()
+        while True:
+            data: str = await websocket.receive_text()
+            logger.info(f"Data: {data}")
+            user_input: dict = json.loads(data)
+            if "audio" in user_input:
+                audio_response = model_caller.groq_voice_chat(
+                    user_input["audio"], PROMPT_TEMPLATE)
+                await websocket.send_json({"audio": audio_response})
+            elif "text" in user_input:
+                async for chunk in model_caller.stream_text_response(
+                        PROMPT_TEMPLATE, user_input["text"]):
+                    text_response = json.loads(chunk)
+                    logger.info(f"Send: {text_response["response"]}")
+                    await websocket.send_json({"text": text_response["response"]})
+            else:
+                raise ValueError("Unproccessable entity")
+    except WebSocketDisconnect:
+        logger.info("Websocket closed")
+    except ValueError as e:
+        logger.error(f"{e}")
 
 
 @app.websocket("/ws/course")
 async def websocket_endpoint_course(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        user_query = await websocket.receive_text()
-        # ressource = rag.similarity_search(user_query)
-        ressource = ""
-        prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource)
-        async for chunk in model_caller.stream_text_response(
-                prompt=prompt, user_query=user_query):
-            response_data = json.loads(chunk)
-            await websocket.send_text(response_data["response"])
+    try:
+        await websocket.accept()
+        while True:
+            user_query = await websocket.receive_text()
+            # ressource = rag.similarity_search(user_query)
+            ressource = ""
+            prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource)
+            async for chunk in model_caller.stream_text_response(
+                    prompt=prompt, user_query=user_query):
+                response_data = json.loads(chunk)
+                await websocket.send_text(response_data["response"])
+    except WebSocketDisconnect:
+        logger.info("Websocket closed")
+    except ValueError as e:
+        logger.error(f"{e}")
 
 
 @app.websocket("/ws/evaluation")
 async def websocket_endpoint_evaluation(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        user_query = await websocket.receive_text()
-        # ressource = rag.similarity_search(user_query)
-        ressource = ""
-        prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource)
-        async for chunk in model_caller.stream_text_response(
-                prompt=prompt, user_query=user_query):
-            response_data = json.loads(chunk)
-            await websocket.send_text(response_data["response"])
-
-
-@app.post("/speech")
-def voice_chat(audio: bytes):
-    return model_caller.groq_voice_chat(audio=audio, prompt=PROMPT_TEMPLATE)
+    try:
+        await websocket.accept()
+        while True:
+            user_query = await websocket.receive_text()
+            # ressource = rag.similarity_search(user_query)
+            ressource = ""
+            prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource)
+            async for chunk in model_caller.stream_text_response(
+                    prompt=prompt, user_query=user_query):
+                response_data = json.loads(chunk)
+                await websocket.send_text(response_data["response"])
+    except WebSocketDisconnect:
+        logger.info("Websocket closed")
+    except ValueError as e:
+        logger.error(f"{e}")
 
 
 if __name__ == "__main__":
