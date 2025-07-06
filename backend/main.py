@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
-rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
+#rag = RAG("/media/gcolomer/gcolomer/archive/enwiki20201020/")
 model_caller = Model()
 
 
@@ -39,7 +39,8 @@ async def websocket_endpoint_course(websocket: WebSocket):
     await websocket.accept()
     while True:
         user_query = await websocket.receive_text()
-        ressource = rag.similarity_search(user_query)
+        # ressource = rag.similarity_search(user_query)
+        ressource = ""
         prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource)
         async for chunk in model_caller.stream_text_response(
                 prompt=prompt, user_query=user_query):
@@ -52,7 +53,8 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
     await websocket.accept()
     while True:
         user_query = await websocket.receive_text()
-        ressource = rag.similarity_search(user_query)
+        # ressource = rag.similarity_search(user_query)
+        ressource = ""
         prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource)
         async for chunk in model_caller.stream_text_response(
                 prompt=prompt, user_query=user_query):
