@@ -24,8 +24,6 @@ Important : tu n’évalues pas l’utilisateur. Tu es un catalyseur de réflexi
 
 Commençons maintenant. Voici la question de l’utilisateur :
 
-{user_query}
-
 """
 
 PROMPT_TEMPLATE_COURSE = """
@@ -53,7 +51,6 @@ Tu peux te servir de ses ressources pour appuyer ta réponse:
 
 Commençons maintenant. Voici la question de l’utilisateur :
 
-{user_query}
 """
 
 PROMPT_TEMPLATE_EVALUATION = """
@@ -78,5 +75,4 @@ Tu peux te servir de ses ressources pour la conception de ton évaluation:
 
 Commençons maintenant. Voici la question de l’utilisateur :
 
-{user_query}
 """

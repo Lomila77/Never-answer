@@ -1,39 +1,28 @@
 from typing import AsyncGenerator
 import json
-import httpx
 import asyncio
 import numpy as np
 from transformers import AutoTokenizer
 import socket
 import os
+from groq import Groq
 
 
 class Model:
 
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY")
+        self.groq_client = Groq(api_key=self.groq_api_key)
         self.tokenizer = AutoTokenizer.from_pretrained(
             "meta-llama/Meta-Llama-3-8B-Instruct")
-
-    async def call_model(self, prompt: str = "", audio: str = "") -> AsyncGenerator[str, None]:
-        if self.is_online:
-            if prompt == "":
-                async for chunk in self.stream_groq_speech_chat(audio):
-                    yield chunk
-            else:
-                async for chunk in self.stream_groq_response(prompt):
-                    yield chunk
-        else:
-            async for chunk in self.stream_local_llama_response(prompt):
-                yield chunk
 
     def is_online(self) -> bool:
         """
         Vérifie la connexion à Internet en tentant d'atteindre un DNS public (Cloudflare).
         """
         host: str = "1.1.1.1"
-        port: int =53
-        timeout: float =1.5
+        port: int = 53
+        timeout: float = 1.5
         try:
             socket.setdefaulttimeout(timeout)
             socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
@@ -55,56 +44,70 @@ class Model:
             await asyncio.sleep(0.5)  # Simule un délai de streaming
             yield fake
 
-    async def stream_groq_speech_chat(self, audio_base64: str) -> AsyncGenerator[str, None]:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.groq.com/v1/speech-to-text",
-                headers={"Authorization": f"Bearer {self.groq_api_key}"},
-                json={"audio": audio_base64, "language": "en"}
-            )
-            async for chunk in self.stream_groq_response(response.json()["text"]):
+    def groq_speech_to_text(self, audio: bytes) -> str:
+        response = self.groq_client.audio.transcriptions.create(
+            file=("audio.wav", audio),  # (nom, bytes, type_mime)
+            model="whisper-large-v3",
+            response_format="json",
+            language="en",
+            temperature=0.0
+        )
+        return response.text
+            
+    def groq_text_to_speech(self, message: str) -> bytes:
+        response = self.groq_client.audio.speech.create(
+            model="playai-tts",
+            voice="Fritz-PlayAI",
+            input=message,
+            response_format="wav"
+        )
+        return response.read()
+
+    def groq_voice_chat(self, audio: bytes, prompt: str) -> bytes:
+        if not self.is_online():
+            raise ValueError("You need to be online for speech chat")
+        voice_to_text: str = self.groq_speech_to_text(audio=audio)
+        model_response: str = self.stream_groq_response(
+            prompt=prompt, user_query=voice_to_text)
+        audio_response: bytes = self.groq_text_to_speech(
+            message=model_response)
+        return audio_response
+    
+    async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
+        if self.is_online():
+            async for chunk in self.stream_groq_response(prompt, user_query, model):
+                yield chunk
+        else:
+            async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
                 yield chunk
 
-    async def stream_groq_response(self, prompt: str) -> AsyncGenerator[str, None]:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {self.groq_api_key}",
-                    "Content-Type": "application/json"
+    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
+        prediction_stream = await self.groq_client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"{prompt}"
                 },
-                json={
-                    "model": "llama3-70b-8192",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "stream": False
+                {
+                    "role": "user",
+                    "content": f"{user_query}"
                 }
-            )
-            yield json.dumps({"response": response.json()["choices"][0]["message"]["content"]})
-
-    async def stream_local_llama_response(self, prompt: str) -> AsyncGenerator[str, None]:
-        command = [
-            "./llama.cpp/main",
-            "-m", "models/llama3-8b/llama-3-8b-instruct.Q4_K_M.gguf",
-            "-p", prompt,
-            "-n", "512"
-        ]
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL,
+            ],
+            model=model,
+            stream=True,
+            temperature=0.5,
+            max_completion_tokens=1024,
+            top_p=1,
+            stop=None,
+            response_format={"type": "json_object"}
         )
+        async for chunk in prediction_stream:
+            yield chunk
 
-        output = ""
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-            output += line.decode()
-            yield json.dumps({"response": output})
-
-    async def stream_local_npu_llama_response(self, prompt: str) -> AsyncGenerator[str, None]:
+    # TODO: On attends la machine pour tester
+    async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
         tokens = self.tokenizer(
-            prompt, return_tensors="np", add_special_tokens=False)["input_ids"]
+            prompt + user_query, return_tensors="np", add_special_tokens=False)["input_ids"]
         input_ids = tokens[0].tolist()
         with open("input.json", "w") as f:
             json.dump({"input_ids": input_ids}, f)

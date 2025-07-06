@@ -27,9 +27,9 @@ def main() -> dict[str, str]:
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
-        data = await websocket.receive_text()
-        prompt = PROMPT_TEMPLATE.format(user_query=data)
-        async for chunk in model_caller.call_model(prompt=prompt):
+        user_query = await websocket.receive_text()
+        async for chunk in model_caller.stream_text_response(
+                prompt=PROMPT_TEMPLATE, user_query=user_query):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
 
@@ -38,10 +38,11 @@ async def websocket_endpoint(websocket: WebSocket):
 async def websocket_endpoint_course(websocket: WebSocket):
     await websocket.accept()
     while True:
-        data = await websocket.receive_text()
-        ressource = rag.similarity_search(data)
-        prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource, user_query=data)
-        async for chunk in model_caller.call_model(prompt=prompt):
+        user_query = await websocket.receive_text()
+        ressource = rag.similarity_search(user_query)
+        prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource)
+        async for chunk in model_caller.stream_text_response(
+                prompt=prompt, user_query=user_query):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
 
@@ -50,22 +51,18 @@ async def websocket_endpoint_course(websocket: WebSocket):
 async def websocket_endpoint_evaluation(websocket: WebSocket):
     await websocket.accept()
     while True:
-        data = await websocket.receive_text()
-        ressource = rag.similarity_search(data)
-        prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource, user_query=data)
-        async for chunk in model_caller.call_model(prompt=prompt):
+        user_query = await websocket.receive_text()
+        ressource = rag.similarity_search(user_query)
+        prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource)
+        async for chunk in model_caller.stream_text_response(
+                prompt=prompt, user_query=user_query):
             response_data = json.loads(chunk)
             await websocket.send_text(response_data["response"])
 
 
-@app.websocket("/ws/voice-chat-groq")
-async def websocket_voice_chat_groq(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        user_audio = await websocket.receive_text()
-        async for chunk in model_caller.call_model(audio=user_audio):
-            response_data = json.loads(chunk)
-            await websocket.send_text(response_data["response"])
+@app.post("/speech")
+def voice_chat(audio: bytes):
+    return model_caller.groq_voice_chat(audio=audio, prompt=PROMPT_TEMPLATE)
 
 
 if __name__ == "__main__":
