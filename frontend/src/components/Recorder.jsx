@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import {Mic } from 'lucide-react';
 
 export default function VoiceChat({ route, sendAudio }) {
     const [recording, setRecording] = useState(false);
@@ -14,8 +15,8 @@ export default function VoiceChat({ route, sendAudio }) {
         };
 
         recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'audio/webm' });
-            sendAudio(blob);
+            const blob = new Blob(chunks, { type: 'audio/wav' });
+            // sendAudio(blob);
             chunks = [];
         };
 
@@ -34,8 +35,19 @@ export default function VoiceChat({ route, sendAudio }) {
     return (
         <div>
             <h2>Chat vocal</h2>
-            <button onClick={recording ? stopRecording : startRecording}>
-                {recording ? "⏹️ Stop" : "🎤 Record"}
+            <button onClick={recording ? stopRecording : startRecording}
+            className={`btn btn-gray-400 size-10 flex items-center justify-center
+                ${recording ? "bg-[var(--primary)] hover:scale-110 hover:brightess-100" :
+                     "bg-gray-400 hover:bg-gradient-to-r from-[var(--primary)] to-emerald-400 "}
+                      rounded-full p-4 shadow-lg active:scale-95
+                    transition-all duration-200`}
+            >
+                <Mic className=" text-white absolute" />
+                <span class={`absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75` + (recording ? "animate-ping" : "")}>
+                    </span>
+                {/* <span class="relative inline-flex size-10 -z-30 rounded-full bg-sky-500">
+                    </span> */}
+                {/* {recording ? "⏹️ Stop" : "🎤 Record"} */}
             </button>
         </div>
     );
