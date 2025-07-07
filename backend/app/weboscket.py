@@ -4,7 +4,7 @@ import asyncio
 from transformers import AutoTokenizer
 import socket
 import os
-from groq import Groq
+from groq import AsyncGroq
 import random
 
 
@@ -12,16 +12,14 @@ class Model:
 
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY")
-        self.groq_client = Groq(api_key=self.groq_api_key)
+        self.groq_client = AsyncGroq(api_key=self.groq_api_key)
         # self.tokenizer = AutoTokenizer.from_pretrained(
         #     "meta-llama/Meta-Llama-3-8B-Instruct")
 
-    # TODO: delete return False
     def is_online(self) -> bool:
         """
         Vérifie la connexion à Internet en tentant d'atteindre un DNS public (Cloudflare).
         """
-        return False
         host: str = "1.1.1.1"
         port: int = 53
         timeout: float = 1.5
@@ -81,7 +79,7 @@ class Model:
         return audio_response
 
     # TODO: replace the mock by real function
-    async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
+    async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
         if self.is_online():
             async for chunk in self.stream_groq_response(prompt, user_query, model):
                 yield chunk
@@ -90,7 +88,7 @@ class Model:
             async for chunk in self.mock_stream_ollama_response():
                 yield chunk
 
-    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
+    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
         prediction_stream = await self.groq_client.chat.completions.create(
             messages=[
                 {
@@ -103,15 +101,15 @@ class Model:
                 }
             ],
             model=model,
-            stream=True,
             temperature=0.5,
             max_completion_tokens=1024,
             top_p=1,
             stop=None,
-            response_format={"type": "json_object"}
+            stream=True
         )
         async for chunk in prediction_stream:
-            yield chunk
+            await asyncio.sleep(0.03)
+            yield chunk.choices[0].delta.content
 
     # TODO: On attends la machine pour tester
     # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
