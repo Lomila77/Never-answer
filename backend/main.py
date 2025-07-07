@@ -37,9 +37,10 @@ async def websocket_endpoint(websocket: WebSocket):
             elif "text" in user_input:
                 async for chunk in model_caller.stream_text_response(
                         PROMPT_TEMPLATE, user_input["text"]):
-                    text_response = json.loads(chunk)
-                    logger.info(f"Send: {text_response["response"]}")
-                    await websocket.send_json({"text": text_response["response"]})
+                    logger.info(f"Chunk: {chunk}")
+                    await websocket.send_json({"text": chunk})
+                # Signale la fin de la génération
+                await websocket.send_json({"done": True})
             else:
                 raise ValueError("Unproccessable entity")
     except WebSocketDisconnect:
