@@ -12,7 +12,7 @@ const Chat = ({ messages }) => {
                             Your browser does not support the audio element.
                         </audio>
                     ) :
-                    <div className="bg-white text-[#333333] p-2 rounded-lg shadow-lg shadow-[#04A3A9]/20">{msg.text}</div>
+                    <div className="bg-white text-[#333333] p-2 max-w-1/2 whitespace-pre-wrap text-wrap rounded-lg shadow-lg shadow-[#04A3A9]/20">{msg.text}</div>
 }                </div>
             ))}
         </div>

@@ -24,6 +24,7 @@ export default function VoiceChat({ route, sendAudio }) {
             const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
             if (sendAudio) sendAudio(blob);
             chunksRef.current = [];
+            setRecording(false);
             // Arrête le flux micro
             stream.getTracks().forEach(track => track.stop());
         };
@@ -42,7 +43,7 @@ export default function VoiceChat({ route, sendAudio }) {
 
     return (
         <div>
-            <h2>Chat vocal</h2>
+            {recording ? <p>true </p> : <p>false</p>}
             <button
                 type="button"
                 onClick={recording ? stopRecording : startRecording}
@@ -53,11 +54,8 @@ export default function VoiceChat({ route, sendAudio }) {
                     transition-all duration-200`}
             >
                 <Mic className=" text-white absolute" />
-                <span className={`absolute inline-flex size-12 rounded-full -z-10 bg-sky-400 opacity-75` + (recording ? " animate-ping" : "")}>
+                <span className={`absolute inline-flex size-8 rounded-full -z-10 bg-[var(--primary)] opacity-75` + (recording ? " animate-ping" : "")}>
                 </span>
-                {/* <span class="relative inline-flex size-10 -z-30 rounded-full bg-sky-500">
-                    </span> */}
-                {/* {recording ? "⏹️ Stop" : "🎤 Record"} */}
             </button>
         </div>
     );
