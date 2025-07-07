@@ -18,7 +18,7 @@ class RAG:
         if not os.path.exists("./db/wikipedia"):
             self.save_jsons_files_in_vector_db()
         else:
-            self.db = FAISS.load_local("./db/faiss_index", self.embedding)
+            self.db = FAISS.load_local("./db/wikipedia", self.embedding, allow_dangerous_deserialization=True)
 
     def save_jsons_files_in_vector_db(self):
         """

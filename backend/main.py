@@ -55,14 +55,15 @@ async def websocket_endpoint_course(websocket: WebSocket):
     try:
         await websocket.accept()
         while True:
-            user_query = await websocket.receive_text()
-            # ressource = rag.similarity_search(user_query)
-            ressource = ""
+            data: str = await websocket.receive_text()
+            user_query: dict = json.loads(data)
+            ressource = rag.similarity_search(user_query["text"])
+            logger.info(f"Ressource: {ressource}")
             prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource)
             async for chunk in model_caller.stream_text_response(
-                    prompt=prompt, user_query=user_query):
-                response_data = json.loads(chunk)
-                await websocket.send_text(response_data["response"])
+                    prompt=prompt, user_query=user_query["text"]):
+                await websocket.send_json({"text": chunk})
+            await websocket.send_json({"done": True})
     except WebSocketDisconnect:
         logger.info("Websocket closed")
     except ValueError as e:
