@@ -13,6 +13,8 @@ function Form({route, title}) {
     const [message, setMessage] = useState("");
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [currentIaMessage, setCurrentIaMessage] = useState("");
+    
     const ws = useRef(null);
     const description = {
         Course : "Generate a Course\n Provide a topic, and the AI will create a personalized, well-organized course you can revisit anytime to study or review.",
@@ -39,10 +41,17 @@ function Form({route, title}) {
                 ]);
             }
             else if (data.text) {
-                setMessages(prev => [
-                ...prev,
-                { from: "ia", text: data.text }
-            ]);
+                setCurrentIaMessage(prev => prev + data.text);
+
+                setMessages(prev => {
+                    if (prev.length > 0 && prev[prev.length - 1].from === "ia") {
+                        return prev;
+                    }
+                    return [...prev, { from: "ia", text: "" }];
+                });
+            }
+            if (data.done) {
+                setCurrentIaMessage("");
             }
             setLoading(false)
         };
@@ -60,6 +69,23 @@ function Form({route, title}) {
             ws.current = null;
           };
     }, [route]);
+
+    useEffect(() => {
+        if (currentIaMessage !== "") {
+            setMessages(prev => {
+                if (prev.length === 0) return prev;
+                const last = prev[prev.length - 1];
+                if (last.from === "ia") {
+                    // Met à jour le texte du dernier message IA
+                    return [
+                        ...prev.slice(0, -1),
+                        { ...last, text: currentIaMessage }
+                    ];
+                }
+                return prev;
+            });
+        }
+    }, [currentIaMessage]);
 
     const sendAudio = async (blob) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {

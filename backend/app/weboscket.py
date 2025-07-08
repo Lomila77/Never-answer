@@ -6,7 +6,11 @@ import socket
 import os
 from groq import AsyncGroq, Groq
 import numpy as np
+from pathlib import Path
 
+
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+tokenizer.save_pretrained("tokenizer")
 
 class Model:
 
@@ -14,15 +18,14 @@ class Model:
         self.groq_api_key = os.getenv("GROQ_API_KEY")
         self.groq_asyncclient = AsyncGroq(api_key=self.groq_api_key)
         self.groq_client = Groq(api_key=self.groq_api_key)
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "meta-llama/Meta-Llama-3-8B-Instruct")
+        self.tokenizer = AutoTokenizer.from_pretrained("./tokenizer")  # Assure-toi que le dossier existe
+        self.dlc_model_path = "llama3-8b-4bit.dlc"
+        self.output_dir = "output"
 
-    # TODO: delete return False
     def is_online(self) -> bool:
         """
         Vérifie la connexion à Internet en tentant d'atteindre un DNS public (Cloudflare).
         """
-        return False
         host: str = "1.1.1.1"
         port: int = 53
         timeout: float = 1.5
@@ -72,7 +75,7 @@ class Model:
             async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
                 yield chunk
 
-    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama-3-70b-") -> AsyncGenerator[str, None]:
+    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
         prediction_stream = await self.groq_client.chat.completions.create(
             messages=[
                 {
@@ -85,42 +88,49 @@ class Model:
                 }
             ],
             model=model,
-            stream=True,
             temperature=0.5,
             max_completion_tokens=1024,
             top_p=1,
             stop=None,
-            response_format={"type": "json_object"}
+            stream=True
         )
         async for chunk in prediction_stream:
-            yield chunk
+            await asyncio.sleep(0.03)
+            yield chunk.choices[0].delta.content
+
 
     async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
-        tokens = self.tokenizer(
-            prompt + user_query, return_tensors="np", add_special_tokens=False)["input_ids"]
+        text_input = prompt + user_query
+        tokens = self.tokenizer(text_input, return_tensors="np", add_special_tokens=False)["input_ids"]
         input_ids = tokens[0].tolist()
-        with open("input.json", "w") as f:
-            json.dump({"input_ids": input_ids}, f)
-        with open("input_list.txt", "w") as f:
-            f.write("input.json\n")
 
+        # Préparation fichiers
+        Path("input").mkdir(exist_ok=True)
+        with open("input/input.json", "w") as f:
+            json.dump({"input_ids": input_ids}, f)
+        with open("input/input_list.txt", "w") as f:
+            f.write("input/input.json\n")
+
+        # Lancement SNPE
         process = await asyncio.create_subprocess_exec(
             "snpe-net-run",
-            "--container", "llama3-8b-instruct.dlc",
-            "--input_list", "input_list.txt",
+            "--container", self.dlc_model_path,
+            "--input_list", "input/input_list.txt",
             "--use_dsp",
-            "--output_dir", "output",
+            "--output_dir", self.output_dir,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL
         )
         await process.communicate()
 
-        logits = np.fromfile("output/OUTPUT_0.raw", dtype=np.float32)
+        # Lecture sortie
+        output_path = os.path.join(self.output_dir, "OUTPUT_0.raw")
+        logits = np.fromfile(output_path, dtype=np.float32)
+        vocab_size = self.tokenizer.vocab_size
         seq_len = len(input_ids)
-        vocab_size = logits.size // seq_len
-        logits = logits.reshape((1, seq_len, vocab_size))  # [B, T, V]
+        logits = logits.reshape((1, seq_len, vocab_size))  # [1, T, V]
 
         preds = np.argmax(logits, axis=-1)[0]
-        generated = self.tokenizer.decode(preds)
+        decoded = self.tokenizer.decode(preds)
 
-        yield json.dumps({"response": generated})
+        yield json.dumps({"response": decoded})
