@@ -5,7 +5,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
 from tqdm import tqdm
-from backend.app.utils import get_all_json_content
+from app.utils import get_all_json_content
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -15,10 +15,19 @@ class RAG:
     def __init__(self, data_directory: str):
         self.data_directory = data_directory
         self.embedding = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
-        if not os.path.exists("./db/wikipedia"):
+        
+        wikipedia_path = "./db/wikipedia"
+        mbti_path = "./db1/mbti"
+
+        if not os.path.exists(wikipedia_path):
             self.save_jsons_files_in_vector_db()
-        else:
-            self.db = FAISS.load_local("./db/wikipedia", self.embedding, allow_dangerous_deserialization=True)
+
+        self.db = FAISS.load_local(wikipedia_path, self.embedding, allow_dangerous_deserialization=True)
+
+        # Merge the MBTI vector database into the main one if it exists.
+        if os.path.exists(mbti_path):
+            db_mbti = FAISS.load_local(mbti_path, self.embedding, allow_dangerous_deserialization=True)
+            self.db.merge_from(db_mbti)  # <== Merge an additional database
 
     def save_jsons_files_in_vector_db(self):
         """
@@ -35,20 +44,23 @@ class RAG:
                 for item in json_content:
                     if isinstance(item, dict) and "text" in item:
                         documents.append(Document(page_content=item["text"]))
+
         logger.info("Parse document")
         splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         logger.info("Cut document into chunks")
         docs = splitter.split_documents(documents)
         logger.info("Split document")
-        if os.path.exists("./db/wikipedia"):
-            logger.info("Save Document in the VectorDB")
-            db = FAISS.load_local("./db/wikipedia", self.embedding)
+
+        wikipedia_path = "./db/wikipedia"
+        if os.path.exists(wikipedia_path):
+            logger.info("Add to existing VectorDB")
+            db = FAISS.load_local(wikipedia_path, self.embedding)
             db.add_documents(docs)
         else:
-
-            logger.info("Save document in new VectorDB")
+            logger.info("Create new VectorDB")
             db = FAISS.from_documents(docs, self.embedding)
-        db.save_local("./db/wikipedia")
+
+        db.save_local(wikipedia_path)
         print(f"Base vectorielle mise à jour avec {len(docs)} chunks de documents")
 
     def similarity_search(self, query: str):

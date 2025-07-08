@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 import json
 import asyncio
 from transformers import AutoTokenizer
@@ -6,6 +6,7 @@ import socket
 import os
 from groq import AsyncGroq
 import random
+from app.memory import MemoryManager
 
 
 class Model:
@@ -15,6 +16,7 @@ class Model:
         self.groq_client = AsyncGroq(api_key=self.groq_api_key)
         # self.tokenizer = AutoTokenizer.from_pretrained(
         #     "meta-llama/Meta-Llama-3-8B-Instruct")
+        self.memory_manager = MemoryManager()
 
     def is_online(self) -> bool:
         """
@@ -68,38 +70,78 @@ class Model:
         )
         return response.read()
 
-    def groq_voice_chat(self, audio: bytes, prompt: str) -> bytes:
+    async def groq_voice_chat(self, audio: bytes, prompt: str, session_id: str) -> bytes:
         if not self.is_online():
             raise ValueError("You need to be online for speech chat")
         voice_to_text: str = self.groq_speech_to_text(audio=audio)
-        model_response: str = self.stream_groq_response(
-            prompt=prompt, user_query=voice_to_text)
+        
+        # Add user message to memory
+        self.memory_manager.add_user_message(session_id, voice_to_text)
+        
+        # Get chat history
+        chat_history = self.memory_manager.get_chat_history(session_id)
+        
+        model_response: str = await self.stream_groq_response_with_memory(
+            prompt=prompt, user_query=voice_to_text, session_id=session_id)
+        
         audio_response: bytes = self.groq_text_to_speech(
             message=model_response)
+            
         return audio_response
 
     # TODO: replace the mock by real function
-    async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
+    async def stream_text_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192", session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
+        if session_id:
+            self.memory_manager.add_user_message(session_id, user_query)
+            
+            # Get chat history and add to prompt if session_id is provided
+            chat_history = ""
+            if session_id in self.memory_manager.memories:
+                chat_history = self.memory_manager.get_chat_history(session_id)
+                
+            # Format the prompt with chat history if it has the {chat_history} placeholder
+            if "{chat_history}" in prompt:
+                prompt = prompt.format(chat_history=f"Historique de la conversation :\n{chat_history}" if chat_history else "", rag_document="")
+            
         if self.is_online():
-            async for chunk in self.stream_groq_response(prompt, user_query, model):
+            collected_chunks = []
+            async for chunk in self.stream_groq_response_with_memory(prompt, user_query, model, session_id):
+                collected_chunks.append(chunk)
                 yield chunk
+                
+            if session_id:
+                # Join all chunks to form the complete AI response
+                complete_response = "".join([chunk for chunk in collected_chunks if chunk])
+                if complete_response:
+                    self.memory_manager.add_ai_message(session_id, complete_response)
         else:
             #async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
             async for chunk in self.mock_stream_ollama_response():
                 yield chunk
 
-    async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
+    async def stream_groq_response_with_memory(self, prompt: str, user_query: str, model: str = "llama3-70b-8192", session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
+        # Prepare messages with memory if session_id is provided
+        messages = [
+            {
+                "role": "system",
+                "content": f"{prompt}"
+            }
+        ]
+        
+        # Add conversation history if session_id is provided
+        if session_id:
+            chat_history = self.memory_manager.get_chat_history(session_id)
+            # Include chat history in the system prompt
+            messages[0]["content"] += f"\n\nConversation history:\n{chat_history}"
+        
+        # Add current user query
+        messages.append({
+            "role": "user",
+            "content": f"{user_query}"
+        })
+        
         prediction_stream = await self.groq_client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"{prompt}"
-                },
-                {
-                    "role": "user",
-                    "content": f"{user_query}"
-                }
-            ],
+            messages=messages,
             model=model,
             temperature=0.5,
             max_completion_tokens=1024,
@@ -107,9 +149,12 @@ class Model:
             stop=None,
             stream=True
         )
+        
         async for chunk in prediction_stream:
             await asyncio.sleep(0.03)
-            yield chunk.choices[0].delta.content
+            content = chunk.choices[0].delta.content
+            if content:
+                yield content
 
     # TODO: On attends la machine pour tester
     # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
