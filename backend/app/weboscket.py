@@ -66,16 +66,14 @@ class Model:
         
         # Add user message to memory
         self.memory_manager.add_user_message(session_id, voice_to_text)
-        
-        # Get chat history
-        chat_history = self.memory_manager.get_chat_history(session_id)
-        
-        model_response: str = await self.stream_groq_response_with_memory(
-            prompt=prompt, user_query=voice_to_text, session_id=session_id)
+        chat_response = ""
+        async for chunk in self.stream_groq_response_with_memory(
+            prompt=prompt, user_query=voice_to_text, session_id=session_id):
+            chat_response += chunk
         
         audio_response: bytes = self.groq_text_to_speech(
-            message=model_response)
-            
+            message=chat_response)
+
         return audio_response
 
     # TODO: replace the mock by real function
@@ -115,20 +113,19 @@ class Model:
                 "content": f"{prompt}"
             }
         ]
-        
         # Add conversation history if session_id is provided
         if session_id:
             chat_history = self.memory_manager.get_chat_history(session_id)
             # Include chat history in the system prompt
             messages[0]["content"] += f"\n\nConversation history:\n{chat_history}"
-        
+
         # Add current user query
         messages.append({
             "role": "user",
             "content": f"{user_query}"
         })
-        
-        prediction_stream = await self.groq_client.chat.completions.create(
+
+        prediction_stream = await self.groq_async_client.chat.completions.create(
             messages=messages,
             model=model,
             temperature=0.5,

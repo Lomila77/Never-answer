@@ -37,10 +37,15 @@ async def websocket_endpoint(websocket: WebSocket):
         session_id = str(uuid.uuid4())
         session_store[id(websocket)] = session_id
         logger.info(f"New websocket connection established with session ID: {session_id}")
-        
+
         while True:
             data: str = await websocket.receive_text()
             user_input: dict = json.loads(data)
+            
+            # CORRECTION: Récupérer l'historique à chaque message
+            chat_history = model_caller.memory_manager.get_chat_history(session_id)
+            logger.info(f"Chat history récupéré: {chat_history}")
+            
             if "audio" in user_input:
                 audio_b64 = user_input["audio"]
                 audio_bytes = base64.b64decode(audio_b64)
@@ -48,18 +53,22 @@ async def websocket_endpoint(websocket: WebSocket):
                     logger.error(f"Header reçu : {audio_bytes[:16]}")
                     raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    audio_bytes, PROMPT_TEMPLATE.format(chat_history="{chat_history}", session_id=session_id))
+                    audio_bytes, 
+                    PROMPT_TEMPLATE.format(chat_history=chat_history), 
+                    session_id
+                )
                 audio_b64 = base64.b64encode(audio_response).decode("utf-8")
                 await websocket.send_json({"audio": audio_b64})
                 logger.info("Audio send")
                 await websocket.send_json({"done": True})
             elif "text" in user_input:
-                # Format prompt with placeholder for chat history
-                prompt_with_history = PROMPT_TEMPLATE.format(chat_history="{chat_history}")
+                # CORRECTION: Formater le prompt avec l'historique actuel
+                prompt_with_history = PROMPT_TEMPLATE.format(
+                    chat_history=chat_history
+                )
                 
                 async for chunk in model_caller.stream_text_response(
                         prompt_with_history, user_input["text"], session_id=session_id):
-                    logger.info(f"Chunk: {chunk}")
                     await websocket.send_json({"text": chunk})
                 # Signale la fin de la génération
                 await websocket.send_json({"done": True})
@@ -78,7 +87,6 @@ async def websocket_endpoint(websocket: WebSocket):
 async def websocket_endpoint_course(websocket: WebSocket):
     try:
         await websocket.accept()
-        # Create a unique session ID for this websocket connection
         session_id = str(uuid.uuid4())
         session_store[id(websocket)] = session_id
         logger.info(f"New course websocket connection established with session ID: {session_id}")
@@ -86,19 +94,26 @@ async def websocket_endpoint_course(websocket: WebSocket):
         while True:
             data: str = await websocket.receive_text()
             user_query: dict = json.loads(data)
-            ressource = rag.similarity_search(user_query["text"])
-            logger.info(f"Ressource: {ressource}")
             
-            # The prompt will be formatted with chat_history in the stream_text_response method
-            # Just need to pass the RAG document content here
-            prompt = PROMPT_TEMPLATE_COURSE.format(rag_document=ressource, chat_history="{chat_history}")
+            # CORRECTION: Récupérer l'historique à chaque message
+            chat_history = model_caller.memory_manager.get_chat_history(session_id)
+            logger.info(f"Course - Chat history: {chat_history}")
+            
+            # Recherche RAG
+            ressource = rag.similarity_search(user_query["text"])
+            logger.info(f"Ressource RAG: {ressource[:200]}...")
+            
+            # CORRECTION: Formater le prompt avec l'historique actuel
+            prompt = PROMPT_TEMPLATE_COURSE.format(
+                rag_document=ressource, 
+                chat_history=chat_history
+            )
             
             async for chunk in model_caller.stream_text_response(
                     prompt=prompt, user_query=user_query["text"], session_id=session_id):
                 await websocket.send_json({"text": chunk})
             await websocket.send_json({"done": True})
     except WebSocketDisconnect:
-        # Clean up the session when the websocket disconnects
         if id(websocket) in session_store:
             del session_store[id(websocket)]
         logger.info("Websocket closed")
@@ -110,7 +125,6 @@ async def websocket_endpoint_course(websocket: WebSocket):
 async def websocket_endpoint_evaluation(websocket: WebSocket):
     try:
         await websocket.accept()
-        # Create a unique session ID for this websocket connection
         session_id = str(uuid.uuid4())
         session_store[id(websocket)] = session_id
         logger.info(f"New evaluation websocket connection established with session ID: {session_id}")
@@ -118,20 +132,40 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
         while True:
             data: str = await websocket.receive_text()
             user_query: dict = json.loads(data)
+            
+            # CORRECTION: Récupérer l'historique à chaque message
+            chat_history = model_caller.memory_manager.get_chat_history(session_id)
+            logger.info(f"Evaluation - Chat history: {chat_history}")
+            
+            # Recherche RAG
             ressource = rag.similarity_search(user_query["text"])
-            prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource, chat_history="{chat_history}")
-            logger.info(f"Ressource: {ressource}")
+            logger.info(f"Evaluation - Ressource RAG: {ressource[:200]}...")
+            
+            # CORRECTION: Formater le prompt avec l'historique actuel
+            prompt = PROMPT_TEMPLATE_EVALUATION.format(
+                rag_document=ressource, 
+                chat_history=chat_history
+            )
+            
+            # CORRECTION: Le problème était ici - pas de parsing JSON des chunks
             async for chunk in model_caller.stream_text_response(
                     prompt=prompt, user_query=user_query["text"], session_id=session_id):
-                response_data = json.loads(chunk)
-                await websocket.send_text(response_data["response"])
+                # CORRECTION: Envoyer directement le chunk comme les autres endpoints
+                await websocket.send_json({"text": chunk})
+            
+            # CORRECTION: Ajouter le signal de fin comme les autres endpoints
+            await websocket.send_json({"done": True})
+            
     except WebSocketDisconnect:
-        # Clean up the session when the websocket disconnects
         if id(websocket) in session_store:
             del session_store[id(websocket)]
-        logger.info("Websocket closed")
-    except ValueError as e:
-        logger.error(f"{e}")
+        logger.info("Evaluation websocket closed")
+    except json.JSONDecodeError as e:
+        logger.error(f"Erreur JSON dans evaluation: {e}")
+        await websocket.send_json({"error": "Erreur de format JSON"})
+    except Exception as e:
+        logger.error(f"Erreur dans evaluation websocket: {e}")
+        await websocket.send_json({"error": str(e)})
 
 
 @app.websocket("/ws/clear-memory")
