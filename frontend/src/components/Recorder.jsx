@@ -48,6 +48,11 @@ export default function VoiceChat({ route, sendAudio }) {
 
         const audioBuffer = flattenAudio(audioDataRef.current);
         const wavBlob = encodeWAV(audioBuffer, audioContextRef.current.sampleRate);
+        const testWav = wavBlob.arrayBuffer().then(buffer => {
+            const bytes = new Uint8Array(buffer.slice(0, 12));
+            const header = String.fromCharCode(...bytes);
+            return header})
+        console.log("Header avant le send:", testWav); // Doit contenir "RIFF....WAVE"
 
         if (sendAudio) sendAudio(wavBlob);
     };

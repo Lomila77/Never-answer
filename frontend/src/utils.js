@@ -1,11 +1,15 @@
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // onloadend donne un DataURL, il faut enlever le préfixe
+            const base64data = reader.result.split(',')[1];
+            resolve(base64data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
     });
-  }
+}
 
   function textToBase64(string) {
     return new Promise((resolve, reject) => {
