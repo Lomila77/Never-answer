@@ -109,7 +109,6 @@ export default function VoiceChat({ route, sendAudio }) {
 
     return (
         <div>
-            <p>{recording ? "true" : "false"}</p>
             <button
                 type="button"
                 onClick={recording ? stopRecording : startRecording}
