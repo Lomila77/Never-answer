@@ -9,7 +9,6 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "tauri": "tauri dev"
-
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
@@ -21,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@tauri-apps/cli": "^2.6.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
