@@ -4,18 +4,26 @@ import asyncio
 from transformers import AutoTokenizer
 import socket
 import os
-from groq import AsyncGroq
-import random
+from groq import AsyncGroq, Groq
+import numpy as np
+from pathlib import Path
+import logging
 from app.memory import MemoryManager
+
+
+
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+# tokenizer.save_pretrained("tokenizer")from app.memory import MemoryManager
 
 
 class Model:
 
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY")
-        self.groq_client = AsyncGroq(api_key=self.groq_api_key)
-        # self.tokenizer = AutoTokenizer.from_pretrained(
-        #     "meta-llama/Meta-Llama-3-8B-Instruct")
+        self.groq_async_client = AsyncGroq(api_key=self.groq_api_key)
+        self.groq_client = Groq(api_key=self.groq_api_key)
+        self.dlc_model_path = "llama3-8b-4bit.dlc"
+        self.output_dir = "output"
         self.memory_manager = MemoryManager()
 
     def is_online(self) -> bool:
@@ -31,25 +39,6 @@ class Model:
             return True
         except socket.error:
             return False
-
-    async def mock_stream_ollama_response(self) -> AsyncGenerator[str, None]:
-        """
-        Fonction mock pour simuler des réponses de l'IA.
-        """
-        fake_responses = [
-            json.dumps({"response": "OK."}),
-            json.dumps({"response": "Bien sûr !"}),
-            json.dumps({"response": "Voici une réponse un peu plus longue pour tester le comportement du chat."}),
-            json.dumps({"response": "D'accord, je vais m'en occuper."}),
-            json.dumps({"response": "Ceci est un message très court."}),
-            json.dumps({"response": "Voici une réponse très détaillée qui explique en plusieurs phrases comment fonctionne le système de mock. Cela permet de vérifier l'affichage des messages longs dans l'interface utilisateur et de s'assurer que tout reste lisible."}),
-            json.dumps({"response": "Test."}),
-            json.dumps({"response": "Merci pour votre question, je vais y répondre dans un instant."}),
-            json.dumps({"response": "Réponse intermédiaire, ni trop longue ni trop courte."}),
-            json.dumps({"response": "Ceci est un exemple de message généré aléatoirement pour simuler une interaction avec l'IA dans différents cas d'usage."}),
-        ]
-        await asyncio.sleep(0.5)  # Simule un délai de streaming
-        yield random.choice(fake_responses)
 
     def groq_speech_to_text(self, audio: bytes) -> str:
         response = self.groq_client.audio.transcriptions.create(
@@ -115,8 +104,7 @@ class Model:
                 if complete_response:
                     self.memory_manager.add_ai_message(session_id, complete_response)
         else:
-            #async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
-            async for chunk in self.mock_stream_ollama_response():
+            async for chunk in self.stream_local_npu_llama_response(prompt, user_query):
                 yield chunk
 
     async def stream_groq_response_with_memory(self, prompt: str, user_query: str, model: str = "llama3-70b-8192", session_id: Optional[str] = None) -> AsyncGenerator[str, None]:
@@ -156,33 +144,38 @@ class Model:
             if content:
                 yield content
 
-    # TODO: On attends la machine pour tester
     # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
-    #     tokens = self.tokenizer(
-    #         prompt + user_query, return_tensors="np", add_special_tokens=False)["input_ids"]
+    #     text_input = prompt + user_query
+    #     tokens = self.tokenizer(text_input, return_tensors="np", add_special_tokens=False)["input_ids"]
     #     input_ids = tokens[0].tolist()
-    #     with open("input.json", "w") as f:
-    #         json.dump({"input_ids": input_ids}, f)
-    #     with open("input_list.txt", "w") as f:
-    #         f.write("input.json\n")
 
+    #     # Préparation fichiers
+    #     Path("input").mkdir(exist_ok=True)
+    #     with open("input/input.json", "w") as f:
+    #         json.dump({"input_ids": input_ids}, f)
+    #     with open("input/input_list.txt", "w") as f:
+    #         f.write("input/input.json\n")
+
+    #     # Lancement SNPE
     #     process = await asyncio.create_subprocess_exec(
     #         "snpe-net-run",
-    #         "--container", "llama3-8b-instruct.dlc",
-    #         "--input_list", "input_list.txt",
+    #         "--container", self.dlc_model_path,
+    #         "--input_list", "input/input_list.txt",
     #         "--use_dsp",
-    #         "--output_dir", "output",
+    #         "--output_dir", self.output_dir,
     #         stdout=asyncio.subprocess.PIPE,
     #         stderr=asyncio.subprocess.DEVNULL
     #     )
     #     await process.communicate()
 
-    #     logits = np.fromfile("output/OUTPUT_0.raw", dtype=np.float32)
+    #     # Lecture sortie
+    #     output_path = os.path.join(self.output_dir, "OUTPUT_0.raw")
+    #     logits = np.fromfile(output_path, dtype=np.float32)
+    #     vocab_size = self.tokenizer.vocab_size
     #     seq_len = len(input_ids)
-    #     vocab_size = logits.size // seq_len
-    #     logits = logits.reshape((1, seq_len, vocab_size))  # [B, T, V]
+    #     logits = logits.reshape((1, seq_len, vocab_size))  # [1, T, V]
 
     #     preds = np.argmax(logits, axis=-1)[0]
-    #     generated = self.tokenizer.decode(preds)
+    #     decoded = self.tokenizer.decode(preds)
 
-    #     yield json.dumps({"response": generated})
+    #     yield json.dumps({"response": decoded})

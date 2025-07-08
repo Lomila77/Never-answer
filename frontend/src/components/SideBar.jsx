@@ -57,7 +57,7 @@ const SideBar = ({ setRoute }) => {
 
             {/* Étiquette (Tooltip) */}
             {hoveredButton === button.route && (
-              <div className="absolute left-full ml-3 top-1/2 transform -translate-y-1/2">
+              <div className="absolute left-full ml-3 z-10 top-1/2 transform -translate-y-1/2">
                 <div className="bg-white text-gray-400 text-xs font-medium px-2 py-2 rounded whitespace-nowrap">
                   {button.label}
                 </div>

@@ -14,7 +14,7 @@ function Form({route, title}) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentIaMessage, setCurrentIaMessage] = useState("");
-    
+
     const ws = useRef(null);
     const description = {
         Course : "Generate a Course\n Provide a topic, and the AI will create a personalized, well-organized course you can revisit anytime to study or review.",
@@ -152,12 +152,12 @@ function Form({route, title}) {
             className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
             >
                 <VoiceChat sendAudio={sendAudio}/>
-                <input
+                <textarea
                 type="text"
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder="Votre message"
-                className="flex-1 px-4 py-2 focus:outline-none disabled:bg-gray-100"
+                className="flex-1 px-4 py-2 h-10 whitespace-pre-wrap text-wrap focus:outline-none"
                 />
 
                 <button

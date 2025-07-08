@@ -6,11 +6,14 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from app.weboscket import Model
 from app.rag import RAG
 from dotenv import load_dotenv
-from api.prompt import (
+from backend.app.prompt import (
     PROMPT_TEMPLATE,
     PROMPT_TEMPLATE_COURSE,
     PROMPT_TEMPLATE_EVALUATION
 )
+from backend.app.utils import is_wav_bytes
+import base64
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,12 +40,19 @@ async def websocket_endpoint(websocket: WebSocket):
         
         while True:
             data: str = await websocket.receive_text()
-            logger.info(f"Data: {data}")
             user_input: dict = json.loads(data)
             if "audio" in user_input:
+                audio_b64 = user_input["audio"]
+                audio_bytes = base64.b64decode(audio_b64)
+                if not is_wav_bytes(audio_bytes):
+                    logger.error(f"Header reçu : {audio_bytes[:16]}")
+                    raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    user_input["audio"], PROMPT_TEMPLATE.format(chat_history="{chat_history}"), session_id)
-                await websocket.send_json({"audio": audio_response})
+                    audio_bytes, PROMPT_TEMPLATE.format(chat_history="{chat_history}", session_id=session_id))
+                audio_b64 = base64.b64encode(audio_response).decode("utf-8")
+                await websocket.send_json({"audio": audio_b64})
+                logger.info("Audio send")
+                await websocket.send_json({"done": True})
             elif "text" in user_input:
                 # Format prompt with placeholder for chat history
                 prompt_with_history = PROMPT_TEMPLATE.format(chat_history="{chat_history}")
@@ -107,14 +117,13 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
         
         while True:
             user_query = await websocket.receive_text()
-            # ressource = rag.similarity_search(user_query)
-            ressource = ""
-            
-            # Format with placeholder for chat history
+            data: str = await websocket.receive_text()
+            user_query: dict = json.loads(data)
+            ressource = rag.similarity_search(user_query["text"])
             prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource, chat_history="{chat_history}")
-            
+            logger.info(f"Ressource: {ressource}")
             async for chunk in model_caller.stream_text_response(
-                    prompt=prompt, user_query=user_query, session_id=session_id):
+                    prompt=prompt, user_query=user_query["text"], session_id=session_id):
                 response_data = json.loads(chunk)
                 await websocket.send_text(response_data["response"])
     except WebSocketDisconnect:
