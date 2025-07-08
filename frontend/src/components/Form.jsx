@@ -14,6 +14,7 @@ function Form({route, title}) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentIaMessage, setCurrentIaMessage] = useState("");
+    const [isReceived, setIsReceived] = useState(true);
 
     const ws = useRef(null);
     const description = {
@@ -31,7 +32,7 @@ function Form({route, title}) {
             console.log("WebSocket connecté");
         };
         ws.current.onmessage = (event) => {
-            console.log("Réponse de l'IA :", event.data); // 👈 Ajoute ceci
+            console.log("Réponse de l'IA :", event.data);
             const data = JSON.parse(event.data);
             if (data.audio) {
                 const audioBlob = base64ToBlob(data.audio);
@@ -52,6 +53,7 @@ function Form({route, title}) {
             }
             if (data.done) {
                 setCurrentIaMessage("");
+                setIsReceived(true);
             }
             setLoading(false)
         };
@@ -72,6 +74,7 @@ function Form({route, title}) {
 
     useEffect(() => {
         if (currentIaMessage !== "") {
+            setIsReceived(false);
             setMessages(prev => {
                 if (prev.length === 0) return prev;
                 const last = prev[prev.length - 1];
@@ -89,6 +92,7 @@ function Form({route, title}) {
 
     const sendAudio = async (blob) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            setIsReceived(false);
             const base64Audio = await blobToBase64(blob);
             const message = {
               audio: base64Audio,
@@ -104,6 +108,7 @@ function Form({route, title}) {
         e.preventDefault();
         if (message === "") return;
         setLoading(true);
+        setIsReceived(false);
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             setMessages(prev => [
                 ...prev,
@@ -116,29 +121,13 @@ function Form({route, title}) {
         }
         setLoading(false);
     }
-    // a tester pour voir la performance
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     if (message === "") return;
-    //     setLoading(true);
-    //     // Décale le travail lourd (base64 + WebSocket) pour ne pas bloquer le thread principal
-    //     setTimeout(async () => {
-    //       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-    //         const base64text = await textToBase64(message);
-    //         const message64 = {
-    //           text: base64text,
-    //         };
-    //         ws.current.send(JSON.stringify(message64));
-    //         setMessages(prev => [
-    //           ...prev,
-    //           { from: "user", text: message }
-    //         ]);
-    //         setMessage("");
-    //       } else {
-    //         alert("WebSocket non connecté");
-    //       }
-    //     }, 0);
-    //   };
+
+    const handleChange = (e) => {
+        if(e.which === 13 && !e.shiftKey) {
+            $(this).closest("form").submit();
+        }
+        setMessage(e.target.value);
+    }
 
     return <div className={`min-h-0 flex-1 pb-4 flex flex-col ${messages && messages.length > 0 ? "justify-end" : "justify-center gap-6 max-w-4xl self-center"}`}>
             <Cadre size={messages && messages.length > 0 ? "msg" : "text"} componentChildren={
@@ -151,18 +140,20 @@ function Form({route, title}) {
             onSubmit={handleSubmit}
             className="flex items-center gap-2 p-4 sticky bottom-0 w-full"
             >
-                <VoiceChat sendAudio={sendAudio}/>
-                <textarea
+                <VoiceChat disabled={isReceived} sendAudio={sendAudio}/>
+                <input
+                disabled={!isReceived}
                 type="text"
                 value={message}
-                onChange={e => setMessage(e.target.value)}
+                onChange={(e)=>handleChange(e)}
                 placeholder="Votre message"
                 className="flex-1 px-4 py-2 h-10 whitespace-pre-wrap text-wrap focus:outline-none"
                 />
 
                 <button
                 type="submit"
-                disabled={loading}
+                // disabled={loading}
+                disabled={isReceived == false}
                   className="
                     bg-gradient-to-r from-[var(--primary)] to-emerald-400
                     text-white px-4 py-2 rounded-full disabled:opacity-50
