@@ -85,7 +85,6 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
     try:
         await websocket.accept()
         while True:
-            user_query = await websocket.receive_text()
             data: str = await websocket.receive_text()
             user_query: dict = json.loads(data)
             ressource = rag.similarity_search(user_query["text"])
