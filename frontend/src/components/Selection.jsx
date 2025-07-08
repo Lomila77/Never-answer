@@ -19,13 +19,13 @@ const Selection = ({handlesubmitSelection}) => {
     ];
 
     return (
-        <div className='bg-white *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 w-full max-w-3xl mx-auto'>
+        <div className='bg-white/70 *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 w-full max-w-3xl mx-auto'>
             {showMbti ?
             <Mbti setShowMbti={setShowMbti}  setMbtiSelection={setMbtiSelection} />
              :
             <>
-            <h2 className='text-3xl ! text-center font-bold p-2  drop-shadow-[var(--primary)]/70 brightness-100'>Select a Topic</h2>
-            <p className="text-center"> {`Choose a subject you want to work on and start learning at your own pace.Whether you want to review a lesson, understand a concept, or practice with exercises, this is here to help you improve and succeed!`}</p>
+            <h2 className='text-3xl text-[var(--primary)] text-center font-bold p-2  drop-shadow-[var(--primary)]/70 brightness-100'>Select a Topic</h2>
+            <p className="text-center text-[var(--primary)]"> {`Choose a subject you want to work on and start learning at your own pace.Whether you want to review a lesson, understand a concept, or practice with exercises, this is here to help you improve and succeed!`}</p>
             <div className=' flex flex-wrap justify-center gap-4'>
                 {choices.map((choice, index) => (
                     <button

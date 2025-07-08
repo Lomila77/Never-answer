@@ -42,4 +42,22 @@ function blobToBase64(blob) {
     return text;
   }
 
-  export {blobToBase64, textToBase64, base64ToBlob, base64ToText};
+
+  const sendMbti = async (data) => {
+    try {
+      const response = await fetch("http://localhost:8000/api/mbti", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      console.log("Server response:", result);
+    } catch (error) {
+      console.error("Error sending data:", error);
+    }
+  };
+
+  export {blobToBase64, textToBase64, base64ToBlob, base64ToText, sendMbti};
