@@ -9,8 +9,8 @@ import numpy as np
 from pathlib import Path
 
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
-tokenizer.save_pretrained("tokenizer")
+# tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
+# tokenizer.save_pretrained("tokenizer")
 
 class Model:
 
@@ -18,7 +18,6 @@ class Model:
         self.groq_api_key = os.getenv("GROQ_API_KEY")
         self.groq_asyncclient = AsyncGroq(api_key=self.groq_api_key)
         self.groq_client = Groq(api_key=self.groq_api_key)
-        self.tokenizer = AutoTokenizer.from_pretrained("./tokenizer")  # Assure-toi que le dossier existe
         self.dlc_model_path = "llama3-8b-4bit.dlc"
         self.output_dir = "output"
 
@@ -98,39 +97,38 @@ class Model:
             await asyncio.sleep(0.03)
             yield chunk.choices[0].delta.content
 
+    # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
+    #     text_input = prompt + user_query
+    #     tokens = self.tokenizer(text_input, return_tensors="np", add_special_tokens=False)["input_ids"]
+    #     input_ids = tokens[0].tolist()
 
-    async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
-        text_input = prompt + user_query
-        tokens = self.tokenizer(text_input, return_tensors="np", add_special_tokens=False)["input_ids"]
-        input_ids = tokens[0].tolist()
+    #     # Préparation fichiers
+    #     Path("input").mkdir(exist_ok=True)
+    #     with open("input/input.json", "w") as f:
+    #         json.dump({"input_ids": input_ids}, f)
+    #     with open("input/input_list.txt", "w") as f:
+    #         f.write("input/input.json\n")
 
-        # Préparation fichiers
-        Path("input").mkdir(exist_ok=True)
-        with open("input/input.json", "w") as f:
-            json.dump({"input_ids": input_ids}, f)
-        with open("input/input_list.txt", "w") as f:
-            f.write("input/input.json\n")
+    #     # Lancement SNPE
+    #     process = await asyncio.create_subprocess_exec(
+    #         "snpe-net-run",
+    #         "--container", self.dlc_model_path,
+    #         "--input_list", "input/input_list.txt",
+    #         "--use_dsp",
+    #         "--output_dir", self.output_dir,
+    #         stdout=asyncio.subprocess.PIPE,
+    #         stderr=asyncio.subprocess.DEVNULL
+    #     )
+    #     await process.communicate()
 
-        # Lancement SNPE
-        process = await asyncio.create_subprocess_exec(
-            "snpe-net-run",
-            "--container", self.dlc_model_path,
-            "--input_list", "input/input_list.txt",
-            "--use_dsp",
-            "--output_dir", self.output_dir,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL
-        )
-        await process.communicate()
+    #     # Lecture sortie
+    #     output_path = os.path.join(self.output_dir, "OUTPUT_0.raw")
+    #     logits = np.fromfile(output_path, dtype=np.float32)
+    #     vocab_size = self.tokenizer.vocab_size
+    #     seq_len = len(input_ids)
+    #     logits = logits.reshape((1, seq_len, vocab_size))  # [1, T, V]
 
-        # Lecture sortie
-        output_path = os.path.join(self.output_dir, "OUTPUT_0.raw")
-        logits = np.fromfile(output_path, dtype=np.float32)
-        vocab_size = self.tokenizer.vocab_size
-        seq_len = len(input_ids)
-        logits = logits.reshape((1, seq_len, vocab_size))  # [1, T, V]
+    #     preds = np.argmax(logits, axis=-1)[0]
+    #     decoded = self.tokenizer.decode(preds)
 
-        preds = np.argmax(logits, axis=-1)[0]
-        decoded = self.tokenizer.decode(preds)
-
-        yield json.dumps({"response": decoded})
+    #     yield json.dumps({"response": decoded})
