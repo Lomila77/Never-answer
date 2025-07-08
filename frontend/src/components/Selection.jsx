@@ -5,6 +5,7 @@ import Mbti from "./Mbti";
 const Selection = ({handlesubmitSelection}) => {
     const [selectedIndex, setSelectedIndex] = useState(null);
     const [showMbti, setShowMbti] = useState(true);
+    const [mbtiSeletion, setMbtiSelection] = useState(null);
     const choices = [
     'history',
     'geography',
@@ -16,9 +17,12 @@ const Selection = ({handlesubmitSelection}) => {
     'mathematics',
     'language',
     ];
+
     return (
         <div className='bg-white *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 w-full max-w-3xl mx-auto'>
-            {showMbti ? <Mbti setShowMbti={setShowMbti} /> :
+            {showMbti ?
+            <Mbti setShowMbti={setShowMbti}  setMbtiSelection={setMbtiSelection} />
+             :
             <>
             <h2 className='text-3xl ! text-center font-bold p-2  drop-shadow-[var(--primary)]/70 brightness-100'>Select a Topic</h2>
             <p className="text-center"> {`Choose a subject you want to work on and start learning at your own pace.Whether you want to review a lesson, understand a concept, or practice with exercises, this is here to help you improve and succeed!`}</p>
