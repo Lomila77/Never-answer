@@ -45,7 +45,6 @@ class RAG:
             db = FAISS.load_local("./db/wikipedia", self.embedding)
             db.add_documents(docs)
         else:
-
             logger.info("Save document in new VectorDB")
             db = FAISS.from_documents(docs, self.embedding)
         db.save_local("./db/wikipedia")
