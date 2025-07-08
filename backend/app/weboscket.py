@@ -6,6 +6,7 @@ import socket
 import os
 from groq import AsyncGroq, Groq
 import numpy as np
+from qai_hub_models.models import llama_v3_8b_instruct
 from pathlib import Path
 
 
@@ -97,38 +98,11 @@ class Model:
             await asyncio.sleep(0.03)
             yield chunk.choices[0].delta.content
 
-    # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
-    #     text_input = prompt + user_query
-    #     tokens = self.tokenizer(text_input, return_tensors="np", add_special_tokens=False)["input_ids"]
-    #     input_ids = tokens[0].tolist()
-
-    #     # Préparation fichiers
-    #     Path("input").mkdir(exist_ok=True)
-    #     with open("input/input.json", "w") as f:
-    #         json.dump({"input_ids": input_ids}, f)
-    #     with open("input/input_list.txt", "w") as f:
-    #         f.write("input/input.json\n")
-
-    #     # Lancement SNPE
-    #     process = await asyncio.create_subprocess_exec(
-    #         "snpe-net-run",
-    #         "--container", self.dlc_model_path,
-    #         "--input_list", "input/input_list.txt",
-    #         "--use_dsp",
-    #         "--output_dir", self.output_dir,
-    #         stdout=asyncio.subprocess.PIPE,
-    #         stderr=asyncio.subprocess.DEVNULL
-    #     )
-    #     await process.communicate()
-
-    #     # Lecture sortie
-    #     output_path = os.path.join(self.output_dir, "OUTPUT_0.raw")
-    #     logits = np.fromfile(output_path, dtype=np.float32)
-    #     vocab_size = self.tokenizer.vocab_size
-    #     seq_len = len(input_ids)
-    #     logits = logits.reshape((1, seq_len, vocab_size))  # [1, T, V]
-
-    #     preds = np.argmax(logits, axis=-1)[0]
-    #     decoded = self.tokenizer.decode(preds)
-
-    #     yield json.dumps({"response": decoded})
+async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
+    full_prompt = f"{prompt}\n{user_query}"
+    model = llama_v3_8b_instruct.model
+    response = model(full_prompt)
+    # Stream simple char par char (optionnel)
+    for word in response.split():
+        await asyncio.sleep(0.02)
+        yield word + " "

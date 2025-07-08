@@ -9,3 +9,7 @@ langchain
 sentence-transformers
 langchain_huggingface
 faiss-cpu
+qai-hub-models[llama-v3-8b-instruct]
+torch
+torchvision
+aimet-onnx

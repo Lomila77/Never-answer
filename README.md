@@ -6,6 +6,11 @@
 2. **Navigate to your project backend directory:**
    ```bash
    cd /mnt/c/Users/qc_de/Documents/GitHub/Never-answer/backend
+   source backend_env/bin/activate
+   export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
+   export GROQ_API_KEY="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"
+   export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
+   python3 -m backend.main
    ```
 3. **(Optional) Create a virtual environment if not already created:**
    ```bash
@@ -27,9 +32,9 @@
    ```
 6. **Set your Groq API key and run the backend:**
    ```bash
-   export GROQ_API_KEY="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"
    cd ..
    pip install uvicorn
+   pip install "uvicorn[standard]"
    pip install fastapi
    pip install groq
    pip install langchain
@@ -37,7 +42,10 @@
    pip install langchain-community
    pip install langchain-core
    pip install sentence-transformers
-
+   pip install websockets
+   pip install wsproto
+   export GROQ_API_KEY="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"
+   export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
    python3 -m backend.main
    ```
 
