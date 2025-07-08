@@ -5,7 +5,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from backend.app.weboscket import Model
 from backend.app.rag import RAG
 from dotenv import load_dotenv
-from backend.api.prompt import (
+from backend.app.prompt import (
     PROMPT_TEMPLATE,
     PROMPT_TEMPLATE_COURSE,
     PROMPT_TEMPLATE_EVALUATION
