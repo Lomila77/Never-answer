@@ -32,9 +32,8 @@ function Form({route, title}) {
             console.log("WebSocket connecté");
         };
         ws.current.onmessage = (event) => {
-            console.log("Réponse de l'IA :", event.data); // 👈 Ajoute ceci
+            console.log("Réponse de l'IA :", event.data);
             const data = JSON.parse(event.data);
-            setIsReceived(false);
             if (data.audio) {
                 const audioBlob = base64ToBlob(data.audio);
                 setMessages(prev => [
@@ -93,6 +92,7 @@ function Form({route, title}) {
 
     const sendAudio = async (blob) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            setIsReceived(false);
             const base64Audio = await blobToBase64(blob);
             const message = {
               audio: base64Audio,
@@ -108,6 +108,7 @@ function Form({route, title}) {
         e.preventDefault();
         if (message === "") return;
         setLoading(true);
+        setIsReceived(false);
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
             setMessages(prev => [
                 ...prev,
