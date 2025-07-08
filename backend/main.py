@@ -44,6 +44,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 audio_b64 = base64.b64encode(audio_response).decode("utf-8")
                 await websocket.send_json({"audio": audio_b64})
                 logger.info("Audio send")
+                await websocket.send_json({"done": True})
             elif "text" in user_input:
                 async for chunk in model_caller.stream_text_response(
                         PROMPT_TEMPLATE, user_input["text"]):
