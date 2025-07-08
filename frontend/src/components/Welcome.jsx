@@ -13,7 +13,7 @@ const Welcome = ({ setWelcomeDisplayed }) => {
             Through adaptive prompts, interactive courses, and just-in-time guidance, Flowrish keeps your mind challenged — never overwhelmed, never bored.
 
             This is where real learning happens.
-            Let the journey begin.            
+            Let the journey begin.
                         </p>
             <GradientButton onClick = {() => setWelcomeDisplayed(false)} className="w-fit self-center"> get started </GradientButton>
         </div>

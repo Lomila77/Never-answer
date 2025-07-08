@@ -19,7 +19,7 @@ const Selection = ({handlesubmitSelection}) => {
     ];
 
     return (
-        <div className='bg-white/70 *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 w-full max-w-3xl mx-auto'>
+        <div className='bg-white/70 w-6/7 *:text-[var(--primary)] border-gray-400 rounded-3xl drop-shadow-xl flex flex-col items-center justify-center gap-4 p-6 max-w-3xl mx-auto'>
             {showMbti ?
             <Mbti setShowMbti={setShowMbti}  setMbtiSelection={setMbtiSelection} />
              :
