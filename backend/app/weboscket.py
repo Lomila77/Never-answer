@@ -7,6 +7,7 @@ import os
 from groq import AsyncGroq, Groq
 import numpy as np
 from pathlib import Path
+import logging
 
 
 # tokenizer = AutoTokenizer.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct")
@@ -16,7 +17,7 @@ class Model:
 
     def __init__(self):
         self.groq_api_key = os.getenv("GROQ_API_KEY")
-        self.groq_asyncclient = AsyncGroq(api_key=self.groq_api_key)
+        self.groq_async_client = AsyncGroq(api_key=self.groq_api_key)
         self.groq_client = Groq(api_key=self.groq_api_key)
         self.dlc_model_path = "llama3-8b-4bit.dlc"
         self.output_dir = "output"
@@ -75,7 +76,7 @@ class Model:
                 yield chunk
 
     async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
-        prediction_stream = await self.groq_client.chat.completions.create(
+        prediction_stream = await self.groq_async_client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
@@ -95,7 +96,9 @@ class Model:
         )
         async for chunk in prediction_stream:
             await asyncio.sleep(0.03)
-            yield chunk.choices[0].delta.content
+            content = chunk.choices[0].delta.content
+            if content is not None:
+                yield content
 
     # async def stream_local_npu_llama_response(self, prompt: str, user_query: str) -> AsyncGenerator[str, None]:
     #     text_input = prompt + user_query

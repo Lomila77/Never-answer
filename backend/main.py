@@ -10,6 +10,9 @@ from backend.api.prompt import (
     PROMPT_TEMPLATE_COURSE,
     PROMPT_TEMPLATE_EVALUATION
 )
+from backend.app.utils import is_wav_bytes
+import base64
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,12 +32,18 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.accept()
         while True:
             data: str = await websocket.receive_text()
-            logger.info(f"Data: {data}")
             user_input: dict = json.loads(data)
             if "audio" in user_input:
+                audio_b64 = user_input["audio"]
+                audio_bytes = base64.b64decode(audio_b64)
+                if not is_wav_bytes(audio_bytes):
+                    logger.error(f"Header reçu : {audio_bytes[:16]}")
+                    raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    user_input["audio"], PROMPT_TEMPLATE)
-                await websocket.send_json({"audio": audio_response})
+                    audio_bytes, PROMPT_TEMPLATE)
+                audio_b64 = base64.b64encode(audio_response).decode("utf-8")
+                await websocket.send_json({"audio": audio_b64})
+                logger.info("Audio send")
             elif "text" in user_input:
                 async for chunk in model_caller.stream_text_response(
                         PROMPT_TEMPLATE, user_input["text"]):
