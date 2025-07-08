@@ -75,7 +75,7 @@ class Model:
                 yield chunk
 
     async def stream_groq_response(self, prompt: str, user_query: str, model: str = "llama3-70b-8192") -> AsyncGenerator[str, None]:
-        prediction_stream = await self.groq_client.chat.completions.create(
+        prediction_stream = self.groq_client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
@@ -93,7 +93,7 @@ class Model:
             stop=None,
             stream=True
         )
-        async for chunk in prediction_stream:
+        for chunk in prediction_stream:
             await asyncio.sleep(0.03)
             yield chunk.choices[0].delta.content
 

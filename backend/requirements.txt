@@ -6,7 +6,6 @@ groq
 python-dotenv
 websockets
 langchain
-langchain_community
 sentence-transformers
 langchain_huggingface
 faiss-cpu
