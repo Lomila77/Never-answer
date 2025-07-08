@@ -3,7 +3,7 @@ import { Mic } from 'lucide-react';
 
 
 // a modifier dans l'avenir car audio [Deprecation] The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead
-export default function VoiceChat({ route, sendAudio }) {
+export default function VoiceChat({ disabled, sendAudio }) {
     const [recording, setRecording] = useState(false);
     const audioContextRef = useRef(null);
     const mediaStreamRef = useRef(null);
@@ -109,11 +109,11 @@ export default function VoiceChat({ route, sendAudio }) {
 
     return (
         <div>
-            <p>{recording ? "true" : "false"}</p>
             <button
                 type="button"
+                disabled={disabled == false}
                 onClick={recording ? stopRecording : startRecording}
-                className={`btn btn-gray-400 size-10 flex border-none items-center justify-center
+                className={`disabled:opacity-55 btn btn-gray-400 size-10 flex border-none items-center justify-center
                 ${recording ? "bg-[var(--primary)] hover:scale-110 hover:brightess-100" :
                     "bg-gray-400 hover:bg-gradient-to-r from-[var(--primary)] to-emerald-400 "}
                     rounded-full p-4 shadow-lg active:scale-95

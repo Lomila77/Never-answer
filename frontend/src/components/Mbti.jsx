@@ -6,38 +6,38 @@ const Mbti = ({ setShowMbti, setMbtiSelection }) => {
     const [answers, setAnswers] = useState([]);
     const questions = [
         {
-          question: "Quand tu rencontres de nouvelles personnes, tu préfères :",
+          question: "When you meet new people, you prefer to:",
           options: [
-            "Parler avec beaucoup de gens, faire connaissance rapidement" ,
-             "Parler avec quelques personnes seulement, préférer des conversations profondes",
+            "Talk to many people and get to know them quickly",
+            "Talk to only a few people and prefer deep conversations",
           ],
         },
         {
-          question: "Pour te ressourcer, tu préfères :",
+          question: "To recharge your energy, you prefer to:",
           options: [
-            "Sortir et être actif avec d’autres",
-            "Passer du temps seul(e) ou dans un cadre calme",
+            "Go out and be active with others",
+            "Spend time alone or in a quiet environment",
           ],
         },
         {
-          question: "Quand tu prends des décisions, tu te bases plutôt sur :",
+          question: "When making decisions, you tend to rely on:",
           options: [
-            "La logique et les faits concrets",
-            "Tes sentiments et valeurs personnelles",
+            "Logic and concrete facts",
+            "Your feelings and personal values",
           ],
         },
         {
-          question: "Tu préfères organiser ta journée :",
+          question: "You prefer to organize your day:",
           options: [
-            "Avec un plan clair et des horaires précis",
-            "En laissant place à l’improvisation et la flexibilité",
+            "With a clear plan and specific schedule",
+            "By leaving room for spontaneity and flexibility",
           ],
         },
         {
-          question: "Tu apprends mieux quand :",
+          question: "You learn best when:",
           options: [
-            "Tu as des instructions claires et concrètes",
-            "Tu peux explorer les idées, concepts et possibilités",
+            "You have clear and concrete instructions",
+            "You can explore ideas, concepts, and possibilities",
           ],
         },
       ];
