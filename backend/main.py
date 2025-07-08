@@ -88,6 +88,7 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
             data: str = await websocket.receive_text()
             user_query: dict = json.loads(data)
             ressource = rag.similarity_search(user_query["text"])
+            prompt = PROMPT_TEMPLATE_EVALUATION.format(rag_document=ressource)
             logger.info(f"Ressource: {ressource}")
             async for chunk in model_caller.stream_text_response(
                     prompt=prompt, user_query=user_query["text"]):
