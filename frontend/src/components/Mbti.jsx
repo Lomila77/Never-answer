@@ -48,11 +48,13 @@ const Mbti = ({ setShowMbti, setMbtiSelection }) => {
         if (!value) return;
         if (!answers[question]) {
           setAnswers((prev) => ({ ...prev, [question]: value }));
+          console.log("in", answers)
         }
-      else {
-
-      }
-      console.log("ANSWERS:", answers.length);
+        else {
+            setAnswers((prev) => ({ ...prev, [question]: value }));
+            console.log("else", answers)
+        }
+      console.log("ANSWERS:", answers.length, answers);
     };
 
     const handleSubmit = (e) => {
@@ -86,7 +88,7 @@ const Mbti = ({ setShowMbti, setMbtiSelection }) => {
             <button
                 className=' disabled:opacity-15 w-fit self-center hover:shadow-emerald-400/40 hover:shadow-lg transiton-all duration-200 hover:scale-105 !text-white brightness-110 px-6 py-2 rounded-full bg-gradient-to-r from-[var(--primary)] to-emerald-400 transition-colors mt-4'
                 type="submit"
-                disabled={answers.length <= questions.length}
+                disabled={Object.keys(answers).length < 5}
             ><ArrowRight/>
             <p>{questions.lenght}</p>
             </button>
