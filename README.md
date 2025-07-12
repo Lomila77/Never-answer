@@ -8,7 +8,7 @@
    cd /mnt/c/Users/qc_de/Documents/GitHub/Never-answer/backend
    source backend_env/bin/activate
    export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
-   export GROQ_API_KEY="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"
+   export GROQ_API_KEY=""
    export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
    python3 -m backend.main
    ```
@@ -44,7 +44,7 @@
    pip install sentence-transformers
    pip install websockets
    pip install wsproto
-   export GROQ_API_KEY="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"
+   export GROQ_API_KEY=""
    export PYTHONPATH=$PYTHONPATH:/mnt/c/Users/qc_de/Documents/GitHub/Never-answer
    python3 -m backend.main
    ```
