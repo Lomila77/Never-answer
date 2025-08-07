@@ -1,8 +1,5 @@
-import Book from '../assets/book.png'
-import Evaluation from '../assets/evaluation.png'
-import Message from '../assets/chat.png'
 import { useState } from 'react';
-import { MessageCircle, GraduationCap, BookCheck } from 'lucide-react';
+import { MessageCircle, GraduationCap, BookCheck, LucideGalleryVerticalEnd } from 'lucide-react';
 import React from 'react';
 
 const SideBar = ({ setRoute }) => {
@@ -29,7 +26,12 @@ const SideBar = ({ setRoute }) => {
       route: "ws://localhost:8000/ws/evaluation",
       icon: <BookCheck />,
       label: "evaluate"
-    }
+    },
+    {
+        route: "ws://localhost:8000/ws/flashcards",
+        icon: <LucideGalleryVerticalEnd />,
+        label: "let's do study cards !"
+      }
   ];
 
   return (

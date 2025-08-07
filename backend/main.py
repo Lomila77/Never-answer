@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from backend.app.prompt import (
     PROMPT_TEMPLATE,
     PROMPT_TEMPLATE_COURSE,
-    PROMPT_TEMPLATE_EVALUATION
+    PROMPT_TEMPLATE_EVALUATION,
+    PROMPT_TEMPLATE_FLASHCARDS
 )
 from backend.app.utils import is_wav_bytes
 import base64
@@ -42,7 +43,7 @@ async def websocket_endpoint(websocket: WebSocket):
             user_input: dict = json.loads(data)
             chat_history = model_caller.memory_manager.get_chat_history(session_id)
             logger.info(f"Chat history récupéré: {chat_history}")
-            
+
             if "audio" in user_input:
                 audio_b64 = user_input["audio"]
                 audio_bytes = base64.b64decode(audio_b64)
@@ -50,8 +51,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     logger.error(f"Header reçu : {audio_bytes[:16]}")
                     raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    audio_bytes, 
-                    PROMPT_TEMPLATE.format(chat_history=chat_history), 
+                    audio_bytes,
+                    PROMPT_TEMPLATE.format(chat_history=chat_history),
                     session_id
                 )
                 audio_b64 = base64.b64encode(audio_response).decode("utf-8")
@@ -62,10 +63,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 prompt_with_history = PROMPT_TEMPLATE.format(
                     chat_history=chat_history
                 )
-                
                 async for chunk in model_caller.stream_text_response(
                         prompt_with_history, user_input["text"], session_id=session_id):
                     await websocket.send_json({"text": chunk})
+                    await websocket.send_json({"done": True})
+            elif "flashcards" in user_input:
+                prompt_with_history = PROMPT_TEMPLATE_FLASHCARDS.format(
+                    chat_history = chat_history
+                )
+                full_reponse = model_caller.stream_text_response(
+                    prompt_with_history, user_input["text"], session_id=session_id)
+                await websocket.send_json({"text": full_reponse})
                 await websocket.send_json({"done": True})
             else:
                 raise ValueError("Unproccessable entity")
@@ -84,7 +92,7 @@ async def websocket_endpoint_course(websocket: WebSocket):
         session_id = str(uuid.uuid4())
         session_store[id(websocket)] = session_id
         logger.info(f"New course websocket connection established with session ID: {session_id}")
-        
+
         while True:
             data: str = await websocket.receive_text()
             user_input: dict = json.loads(data)
@@ -97,8 +105,8 @@ async def websocket_endpoint_course(websocket: WebSocket):
                     logger.error(f"Header reçu : {audio_bytes[:16]}")
                     raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    audio_bytes, 
-                    PROMPT_TEMPLATE.format(chat_history=chat_history), 
+                    audio_bytes,
+                    PROMPT_TEMPLATE.format(chat_history=chat_history),
                     session_id
                 )
                 audio_b64 = base64.b64encode(audio_response).decode("utf-8")
@@ -107,15 +115,15 @@ async def websocket_endpoint_course(websocket: WebSocket):
                 await websocket.send_json({"done": True})
             elif "text" in user_input:
                 logger.info(f"Course - Chat history: {chat_history}")
-                
+
                 ressource = rag.similarity_search(user_input["text"])
                 logger.info(f"Ressource RAG: {ressource[:200]}...")
-                
+
                 prompt = PROMPT_TEMPLATE_COURSE.format(
-                    rag_document=ressource, 
+                    rag_document=ressource,
                     chat_history=chat_history
                 )
-                
+
                 async for chunk in model_caller.stream_text_response(
                         prompt=prompt, user_query=user_input["text"], session_id=session_id):
                     await websocket.send_json({"text": chunk})
@@ -135,7 +143,7 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
         session_id = str(uuid.uuid4())
         session_store[id(websocket)] = session_id
         logger.info(f"New evaluation websocket connection established with session ID: {session_id}")
-        
+
         while True:
             data: str = await websocket.receive_text()
             user_input: dict = json.loads(data)
@@ -148,8 +156,8 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
                     logger.error(f"Header reçu : {audio_bytes[:16]}")
                     raise ValueError("Le fichier audio reçu n'est pas au format WAV.")
                 audio_response = await model_caller.groq_voice_chat(
-                    audio_bytes, 
-                    PROMPT_TEMPLATE.format(chat_history=chat_history), 
+                    audio_bytes,
+                    PROMPT_TEMPLATE.format(chat_history=chat_history),
                     session_id
                 )
                 audio_b64 = base64.b64encode(audio_response).decode("utf-8")
@@ -159,20 +167,20 @@ async def websocket_endpoint_evaluation(websocket: WebSocket):
             elif "text" in user_input:
                 chat_history = model_caller.memory_manager.get_chat_history(session_id)
                 logger.info(f"Evaluation - Chat history: {chat_history}")
-                
+
                 ressource = rag.similarity_search(user_input["text"])
                 logger.info(f"Evaluation - Ressource RAG: {ressource[:200]}...")
-                
+
                 prompt = PROMPT_TEMPLATE_EVALUATION.format(
-                    rag_document=ressource, 
+                    rag_document=ressource,
                     chat_history=chat_history
                 )
-                
+
                 async for chunk in model_caller.stream_text_response(
                         prompt=prompt, user_query=user_input["text"], session_id=session_id):
                     await websocket.send_json({"text": chunk})
                 await websocket.send_json({"done": True})
-            
+
     except WebSocketDisconnect:
         if id(websocket) in session_store:
             del session_store[id(websocket)]
@@ -194,7 +202,7 @@ async def websocket_clear_memory(websocket: WebSocket):
             # Get the session ID from the request
             data: str = await websocket.receive_text()
             session_data: dict = json.loads(data)
-            
+
             if "session_id" in session_data:
                 session_id = session_data["session_id"]
                 # Clear memory for the specified session
@@ -202,7 +210,7 @@ async def websocket_clear_memory(websocket: WebSocket):
                 await websocket.send_json({"status": "success", "message": f"Memory cleared for session {session_id}"})
             else:
                 await websocket.send_json({"status": "error", "message": "No session_id provided"})
-                
+
     except WebSocketDisconnect:
         logger.info("Memory clear websocket closed")
     except ValueError as e:

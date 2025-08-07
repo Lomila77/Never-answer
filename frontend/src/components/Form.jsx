@@ -1,11 +1,9 @@
-import Plank from "./Plank";
-import Button from "./Button";
 import { useEffect, useRef, useState } from "react";
 import Cadre from "./Cadre";
 import Chat from "./Chat";
-import { SendHorizonal } from "lucide-react";
+import { SendHorizonal, Zap } from "lucide-react";
 import VoiceChat from "./Recorder";
-import {blobToBase64, textToBase64, base64ToText, base64ToBlob} from "../utils";
+import {blobToBase64, base64ToBlob} from "../utils";
 
 
 
@@ -122,6 +120,20 @@ function Form({route, title}) {
         setLoading(false);
     }
 
+    const handleSubmitFlash = async (e) => {
+        e.preventDefault();
+        if (messages == null || messages.length === 0) return;
+        setLoading(true);
+        setIsReceived(false);
+        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(JSON.stringify({flashcards: true}));
+        }   else {
+            alert("WebSocket non connecté");
+        }
+        setLoading(false);
+    }
+
+
     const handleChange = (e) => {
         if(e.which === 13 && !e.shiftKey) {
             $(this).closest("form").submit();
@@ -150,6 +162,7 @@ function Form({route, title}) {
                 className="flex-1 px-4 py-2 h-10 whitespace-pre-wrap text-wrap focus:outline-none"
                 />
 
+                <Zap disabled={!isReceived} onClick={handleSubmitFlash} size={28} className="text-[var(--primary)] hover:text-emerald-400 transition-colors cursor-pointer" title="Générer des flashcards" />
                 <button
                 type="submit"
                 // disabled={loading}
